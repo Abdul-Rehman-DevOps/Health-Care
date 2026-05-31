@@ -1,0 +1,11 @@
+node_modules
+server/node_modules
+dist
+server/dist
+dist-electron
+*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.log

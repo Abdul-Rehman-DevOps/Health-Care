@@ -1,0 +1,30 @@
+{
+  "name": "health-care-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@fastify/compress": "^8.0.1",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/jwt": "^9.0.1",
+    "@prisma/client": "^6.3.1",
+    "fastify": "^5.2.1",
+    "tsx": "^4.19.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "prisma": "^6.3.1",
+    "typescript": "^5.7.3"
+  }
+}
