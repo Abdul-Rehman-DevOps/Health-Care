@@ -89,19 +89,29 @@ export default function Departments() {
         title="Departments"
         subtitle="Hospital units and outpatient sections"
         action={
-          <button
-            type="button"
-            onClick={() => {
-              setForm(emptyForm);
-              setOpen(true);
-            }}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" />
-            Add department
-          </button>
+          isAdmin ? (
+            <button
+              type="button"
+              onClick={() => {
+                setForm(emptyForm);
+                setOpen(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" />
+              Add department
+            </button>
+          ) : undefined
         }
       />
+
+      {!isAdmin && (
+        <div className="alert-warning mb-6">
+          <p className="text-sm text-amber-800">
+            View only. Only an admin can add, edit, or remove departments.
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="alert-error">{error.message}</div>
@@ -143,6 +153,7 @@ export default function Departments() {
                 </div>
                 <ActionButtons
                   compact
+                  showEdit={isAdmin}
                   showDelete={isAdmin}
                   onEdit={() => {
                     setEditId(d.id);
@@ -166,7 +177,7 @@ export default function Departments() {
 
       <Modal
         title={editId ? 'Edit department' : 'Add department'}
-        open={modalOpen}
+        open={isAdmin && modalOpen}
         onClose={closeModal}
       >
         <form

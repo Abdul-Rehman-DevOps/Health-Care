@@ -12,6 +12,13 @@ import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import Badge from '../components/Badge';
+import {
+  displayPakPhone,
+  formatPakPhoneInput,
+  PHONE_PLACEHOLDER,
+  allowDigitKey,
+  validatePakPhone,
+} from '../lib/pakistan-inputs';
 
 const emptyForm: NewDoctor = { name: '' };
 
@@ -21,7 +28,7 @@ function doctorToForm(d: Doctor): NewDoctor {
     qualification: d.qualification ?? undefined,
     specialization: d.specialization ?? undefined,
     departmentId: d.departmentId ?? undefined,
-    contact: d.contact ?? undefined,
+    contact: d.contact ? formatPakPhoneInput(d.contact) : undefined,
     fee: Number(d.fee) || undefined,
   };
 }
@@ -33,6 +40,7 @@ export default function Doctors() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<NewDoctor>(emptyForm);
+  const [contactError, setContactError] = useState<string>();
   const qc = useQueryClient();
 
   const modalOpen = open || !!editId;
@@ -86,6 +94,7 @@ export default function Doctors() {
     setOpen(false);
     setEditId(null);
     setForm(emptyForm);
+    setContactError(undefined);
   };
 
   const pending = create.isPending || update.isPending;
@@ -97,19 +106,29 @@ export default function Doctors() {
         title="Doctors"
         subtitle="Medical staff directory"
         action={
-          <button
-            type="button"
-            onClick={() => {
-              setForm(emptyForm);
-              setOpen(true);
-            }}
-            className="btn-primary"
-          >
-            <Plus className="h-4 w-4" />
-            Add doctor
-          </button>
+          isAdmin ? (
+            <button
+              type="button"
+              onClick={() => {
+                setForm(emptyForm);
+                setOpen(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus className="h-4 w-4" />
+              Add doctor
+            </button>
+          ) : undefined
         }
       />
+
+      {!isAdmin && (
+        <div className="alert-warning mb-6">
+          <p className="text-sm text-amber-800">
+            View only. Only an admin can add, edit, or remove doctors.
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="alert-error">{error.message}</div>
@@ -146,9 +165,15 @@ export default function Doctors() {
                   <p className="mt-3 text-sm font-semibold text-brand-700">
                     Fee: PKR {Number(d.fee).toLocaleString()}
                   </p>
+                  {d.contact && (
+                    <p className="mt-1 font-mono text-xs text-slate-500">
+                      {displayPakPhone(d.contact)}
+                    </p>
+                  )}
                   <div className="mt-3">
                     <ActionButtons
                       compact
+                      showEdit={isAdmin}
                       showDelete={isAdmin}
                       onEdit={() => {
                         setEditId(d.id);
@@ -173,13 +198,19 @@ export default function Doctors() {
 
       <Modal
         title={editId ? 'Edit doctor' : 'Add new doctor'}
-        open={modalOpen}
+        open={isAdmin && modalOpen}
         onClose={closeModal}
       >
         <form
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            const err = validatePakPhone(form.contact, 'Contact');
+            if (err) {
+              setContactError(err);
+              return;
+            }
+            setContactError(undefined);
             if (editId) {
               update.mutate({ id: editId, data: form });
             } else {
@@ -225,9 +256,26 @@ export default function Doctors() {
             Contact
             <input
               value={form.contact ?? ''}
-              onChange={(e) => setForm({ ...form, contact: e.target.value })}
-              className="input mt-1.5"
+              onChange={(e) => {
+                setContactError(undefined);
+                setForm({ ...form, contact: formatPakPhoneInput(e.target.value) });
+              }}
+              onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
+              onPaste={(e) => {
+                e.preventDefault();
+                setForm({ ...form, contact: formatPakPhoneInput(e.clipboardData.getData('text')) });
+              }}
+              onFocus={() => {
+                if (!form.contact) setForm({ ...form, contact: '+92 ' });
+              }}
+              className="input mt-1.5 font-mono"
+              placeholder={PHONE_PLACEHOLDER}
+              inputMode="tel"
+              maxLength={16}
             />
+            {contactError && (
+              <p className="mt-1 text-xs font-medium text-red-600">{contactError}</p>
+            )}
           </label>
           <label className="block text-sm font-medium text-slate-700">
             Consultation fee (PKR)

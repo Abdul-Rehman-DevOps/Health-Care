@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { clearSessionActivity, recordSessionActivity } from '../hooks/useSessionTimeout';
 
 export type UserRole = 'admin' | 'user';
 
@@ -47,12 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u);
     setToken(t);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: u, token: t }));
+    recordSessionActivity();
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem(STORAGE_KEY);
+    clearSessionActivity();
   }, []);
 
   const value = useMemo(

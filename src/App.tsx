@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { BrowserRouter, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Layout, { type PageId } from './components/Layout';
+import { useToast } from './context/ToastContext';
+import { useSessionTimeout } from './hooks/useSessionTimeout';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
@@ -9,26 +11,53 @@ import Appointments from './pages/Appointments';
 import Departments from './pages/Departments';
 import Pharmacy from './pages/Pharmacy';
 import Settings from './pages/Settings';
+import { pageToPath, pathToPage, type PageId } from './lib/routes';
 
 function AppShell() {
-  const { user } = useAuth();
-  const [page, setPage] = useState<PageId>('dashboard');
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  if (!user) return <Login />;
+  useSessionTimeout(!!user, () => {
+    logout();
+    toast('Session expired after 1 hour of inactivity. Please sign in again.', 'error');
+    navigate('/login', { replace: true });
+  });
+
+  if (!user) {
+    if (location.pathname !== '/login') {
+      return <Navigate to="/login" replace />;
+    }
+    return <Login />;
+  }
+
+  if (location.pathname === '/login') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const routePage = pathToPage(location.pathname);
+  if (!routePage) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const navigateTo = (next: PageId) => {
+    navigate(pageToPath(next));
+  };
 
   const content = {
-    dashboard: <Dashboard onNavigate={setPage} />,
+    dashboard: <Dashboard onNavigate={navigateTo} />,
     patients: <Patients />,
     doctors: <Doctors />,
     appointments: <Appointments />,
     departments: <Departments />,
     pharmacy: <Pharmacy />,
     settings: <Settings />,
-  }[page];
+  }[routePage];
 
   return (
-    <Layout page={page} onNavigate={setPage}>
-      <div key={page} className="page-enter">
+    <Layout page={routePage} onNavigate={navigateTo}>
+      <div key={routePage} className="page-enter">
         {content}
       </div>
     </Layout>
@@ -36,5 +65,9 @@ function AppShell() {
 }
 
 export default function App() {
-  return <AppShell />;
+  return (
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
+  );
 }

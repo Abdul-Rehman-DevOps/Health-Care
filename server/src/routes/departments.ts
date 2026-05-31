@@ -17,7 +17,7 @@ export const departmentRoutes: FastifyPluginAsync = async (app) => {
     });
   });
 
-  app.post('/', async (req, reply) => {
+  app.post('/', { preHandler: [app.requireAdmin] }, async (req, reply) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
       reply.code(400).send({ error: parsed.error.flatten() });
@@ -43,7 +43,7 @@ export const departmentRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.patch('/:id', async (req, reply) => {
+  app.patch('/:id', { preHandler: [app.requireAdmin] }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const parsed = createSchema.partial().safeParse(req.body);
     if (!parsed.success) {

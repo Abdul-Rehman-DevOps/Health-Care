@@ -12,15 +12,9 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import type { PageId } from '../lib/routes';
 
-export type PageId =
-  | 'dashboard'
-  | 'patients'
-  | 'doctors'
-  | 'appointments'
-  | 'departments'
-  | 'pharmacy'
-  | 'settings';
+export type { PageId };
 
 const nav: { id: PageId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },

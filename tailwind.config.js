@@ -61,6 +61,10 @@ export default {
           '0%, 100%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
         },
+        'ken-burns': {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(1.08)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease-out',
@@ -71,6 +75,7 @@ export default {
         'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
         'spin-slow': 'spin-slow 8s linear infinite',
         'gradient-x': 'gradient-x 6s ease infinite',
+        'ken-burns': 'ken-burns 5s ease-out forwards',
       },
     },
   },

@@ -12,6 +12,17 @@ import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Badge from '../components/Badge';
+import {
+  displayCnic,
+  displayPakPhone,
+  formatCnicInput,
+  formatPakPhoneInput,
+  CNIC_PLACEHOLDER,
+  PHONE_PLACEHOLDER,
+  allowDigitKey,
+  validateCnic,
+  validatePakPhone,
+} from '../lib/pakistan-inputs';
 
 const emptyForm: NewPatient = { name: '', gender: 'Male' };
 
@@ -21,11 +32,13 @@ function patientToForm(p: Patient): NewPatient {
     fatherName: p.fatherName ?? undefined,
     age: p.age ?? undefined,
     gender: (p.gender as NewPatient['gender']) ?? undefined,
-    contact: p.contact ?? undefined,
-    emergencyContact: p.emergencyContact ?? undefined,
+    contact: p.contact ? formatPakPhoneInput(p.contact) : undefined,
+    emergencyContact: p.emergencyContact
+      ? formatPakPhoneInput(p.emergencyContact)
+      : undefined,
     address: p.address ?? undefined,
     bloodGroup: p.bloodGroup ?? undefined,
-    cnic: p.cnic ?? undefined,
+    cnic: p.cnic ? formatCnicInput(p.cnic) : undefined,
     allergies: p.allergies ?? undefined,
     notes: p.notes ?? undefined,
   };
@@ -152,7 +165,7 @@ export default function Patients() {
                       {p.patientId}
                     </td>
                     <td className="font-medium">{p.name}</td>
-                    <td>{p.contact ?? '—'}</td>
+                    <td className="font-mono text-xs">{displayPakPhone(p.contact)}</td>
                     <td className="truncate" title={p.allergies ?? ''}>
                       {p.allergies ?? p.notes ?? '—'}
                     </td>
@@ -291,13 +304,35 @@ function PatientForm({
   error?: string;
   submitLabel?: string;
 }) {
+  const [fieldErrors, setFieldErrors] = useState<{
+    cnic?: string;
+    contact?: string;
+    emergencyContact?: string;
+  }>({});
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const cnicErr = validateCnic(form.cnic);
+    const contactErr = validatePakPhone(form.contact, 'Contact');
+    const emergencyErr = validatePakPhone(form.emergencyContact, 'Emergency contact');
+
+    if (cnicErr || contactErr || emergencyErr) {
+      setFieldErrors({
+        cnic: cnicErr ?? undefined,
+        contact: contactErr ?? undefined,
+        emergencyContact: emergencyErr ?? undefined,
+      });
+      return;
+    }
+
+    setFieldErrors({});
+    onSubmit();
+  }
+
   return (
     <form
       className="max-h-[70vh] space-y-4 overflow-y-auto pr-1"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
+      onSubmit={handleSubmit}
     >
       <Field label="Full name" required>
         <input
@@ -343,26 +378,79 @@ function PatientForm({
           </select>
         </Field>
       </div>
-      <Field label="CNIC">
+      <Field label="CNIC" error={fieldErrors.cnic}>
         <input
           value={form.cnic ?? ''}
-          onChange={(e) => setForm({ ...form, cnic: e.target.value })}
-          className="input"
-          placeholder="35201-1234567-1"
+          onChange={(e) => {
+            const formatted = formatCnicInput(e.target.value);
+            setForm({ ...form, cnic: formatted });
+            setFieldErrors((prev) => ({ ...prev, cnic: undefined }));
+          }}
+          onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
+          onPaste={(e) => {
+            e.preventDefault();
+            const formatted = formatCnicInput(e.clipboardData.getData('text'));
+            setForm({ ...form, cnic: formatted });
+          }}
+          onBlur={() => {
+            setFieldErrors((prev) => ({
+              ...prev,
+              cnic: validateCnic(form.cnic) ?? undefined,
+            }));
+          }}
+          className={`input font-mono ${fieldErrors.cnic ? 'border-red-300 focus:border-red-500 focus:ring-red-500/25' : ''}`}
+          placeholder={CNIC_PLACEHOLDER}
+          inputMode="numeric"
+          pattern="[0-9-]*"
+          maxLength={15}
         />
       </Field>
-      <Field label="Contact">
+      <Field label="Contact" error={fieldErrors.contact}>
         <input
           value={form.contact ?? ''}
-          onChange={(e) => setForm({ ...form, contact: e.target.value })}
-          className="input"
+          onChange={(e) => {
+            setFieldErrors((prev) => ({ ...prev, contact: undefined }));
+            setForm({ ...form, contact: formatPakPhoneInput(e.target.value) });
+          }}
+          onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
+          onPaste={(e) => {
+            e.preventDefault();
+            setForm({ ...form, contact: formatPakPhoneInput(e.clipboardData.getData('text')) });
+          }}
+          onFocus={() => {
+            if (!form.contact) setForm({ ...form, contact: '+92 ' });
+          }}
+          className="input font-mono"
+          placeholder={PHONE_PLACEHOLDER}
+          inputMode="tel"
+          maxLength={16}
         />
       </Field>
-      <Field label="Emergency contact">
+      <Field label="Emergency contact" error={fieldErrors.emergencyContact}>
         <input
           value={form.emergencyContact ?? ''}
-          onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
-          className="input"
+          onChange={(e) => {
+            setFieldErrors((prev) => ({ ...prev, emergencyContact: undefined }));
+            setForm({
+              ...form,
+              emergencyContact: formatPakPhoneInput(e.target.value),
+            });
+          }}
+          onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
+          onPaste={(e) => {
+            e.preventDefault();
+            setForm({
+              ...form,
+              emergencyContact: formatPakPhoneInput(e.clipboardData.getData('text')),
+            });
+          }}
+          onFocus={() => {
+            if (!form.emergencyContact) setForm({ ...form, emergencyContact: '+92 ' });
+          }}
+          className="input font-mono"
+          placeholder={PHONE_PLACEHOLDER}
+          inputMode="tel"
+          maxLength={16}
         />
       </Field>
       <Field label="Address">
@@ -414,9 +502,9 @@ function DetailGrid({ patient: p }: { patient: Patient }) {
     ['Father name', p.fatherName ?? '—'],
     ['Age', p.age ? `${p.age} years` : '—'],
     ['Gender', p.gender ?? '—'],
-    ['CNIC', p.cnic ?? '—'],
-    ['Contact', p.contact ?? '—'],
-    ['Emergency', p.emergencyContact ?? '—'],
+    ['CNIC', displayCnic(p.cnic)],
+    ['Contact', displayPakPhone(p.contact)],
+    ['Emergency', displayPakPhone(p.emergencyContact)],
     ['Address', p.address ?? '—'],
     ['Blood group', p.bloodGroup ?? '—'],
     ['Illness / condition', p.allergies ?? '—'],
@@ -438,16 +526,19 @@ function Field({
   label,
   children,
   required,
+  error,
 }: {
   label: string;
   children: ReactNode;
   required?: boolean;
+  error?: string;
 }) {
   return (
     <label className="block text-sm font-medium text-slate-700">
       {label}
       {required && <span className="text-red-500"> *</span>}
       <div className="mt-1.5">{children}</div>
+      {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
     </label>
   );
 }

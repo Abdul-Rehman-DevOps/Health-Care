@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 type Props = {
   onEdit: () => void;
   onDelete?: () => void;
+  showEdit?: boolean;
   showDelete?: boolean;
   compact?: boolean;
 };
@@ -10,21 +11,26 @@ type Props = {
 export default function ActionButtons({
   onEdit,
   onDelete,
+  showEdit = true,
   showDelete = false,
   compact,
 }: Props) {
   const size = compact ? 'py-1.5 px-2 text-xs' : 'py-1.5 px-2.5 text-xs';
 
+  if (!showEdit && !showDelete) return null;
+
   return (
     <div className="flex flex-wrap justify-end gap-1.5">
-      <button
-        type="button"
-        onClick={onEdit}
-        className={`btn-secondary inline-flex ${size} hover:shadow-sm`}
-      >
-        <Pencil className="h-3.5 w-3.5" />
-        Edit
-      </button>
+      {showEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className={`btn-secondary inline-flex ${size} hover:shadow-sm`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Edit
+        </button>
+      )}
       {showDelete && onDelete && (
         <button
           type="button"
