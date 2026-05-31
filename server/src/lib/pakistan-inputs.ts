@@ -33,7 +33,7 @@ export function isValidPakMobile(value: string): boolean {
   return d.length === 10 && d.startsWith('3');
 }
 
-/** True when the user is typing a phone number (not a plain name like "Nani"). */
+/** True when the user is typing a phone number (not a plain name). */
 export function looksLikePhoneInput(value: string): boolean {
   const trimmed = value.trim();
   if (!trimmed) return false;
@@ -58,7 +58,7 @@ export const optionalPakMobile = (label: string) =>
       message: `${label} must be a valid Pakistani mobile (+92 3XX-XXXXXXX)`,
     });
 
-/** Name or Pakistani mobile — for emergency contact person (e.g. "Nani"). */
+/** Name or Pakistani mobile — for emergency contact person. */
 export const optionalPhoneOrName = (label: string) =>
   z
     .string()

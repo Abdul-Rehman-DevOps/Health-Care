@@ -460,7 +460,7 @@ function PatientForm({
             setForm({ ...form, emergencyContact: e.target.value });
           }}
           className={inputClass(!!mergedErrors.emergencyContact)}
-          placeholder="e.g. Nani or +92 3XX-XXXXXXX"
+          placeholder="e.g. Abdul or +92 3XX-XXXXXXX"
         />
       </Field>
       <Field label="Address" required error={mergedErrors.address}>
