@@ -1,3 +1,5 @@
+import { parseApiErrorBody } from './validation-errors.js';
+
 const API = '/api';
 
 function getToken(): string | null {
@@ -23,16 +25,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (res.status === 401) {
     localStorage.removeItem('health-care-auth');
-    window.location.reload();
+    const { origin, pathname, search, hash } = window.location;
+    window.location.replace(`${origin}${pathname}${search}${hash}`);
     throw new Error('Session expired. Please log in again.');
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    const msg =
-      typeof err.error === 'string'
-        ? err.error
-        : err.error?.message ?? `Request failed (${res.status})`;
-    throw new Error(msg);
+    throw parseApiErrorBody(err);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

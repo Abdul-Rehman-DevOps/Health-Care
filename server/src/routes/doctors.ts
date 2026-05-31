@@ -3,9 +3,10 @@ import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { optionalPakMobile, normalizePhoneField } from '../lib/pakistan-inputs.js';
+import { sendValidationError } from '../lib/validation.js';
 
 const schema = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1, 'Full name is required'),
   qualification: z.string().optional(),
   specialization: z.string().optional(),
   departmentId: z.string().uuid().optional().nullable(),
@@ -53,7 +54,7 @@ export const doctorRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/', { preHandler: [app.requireAdmin] }, async (req, reply) => {
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return sendValidationError(reply, parsed.error);
     const doctor = await prisma.doctor.create({ data: toCreateData(parsed.data) });
     return reply.code(201).send(doctor);
   });
@@ -61,7 +62,7 @@ export const doctorRoutes: FastifyPluginAsync = async (app) => {
   app.patch('/:id', { preHandler: [app.requireAdmin] }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const parsed = schema.partial().safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return sendValidationError(reply, parsed.error);
     try {
       const doctor = await prisma.doctor.update({
         where: { id },

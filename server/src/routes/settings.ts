@@ -1,11 +1,14 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { sendValidationError } from '../lib/validation.js';
 
 const schema = z.object({
-  hospitalName: z.string().min(1).optional(),
+  hospitalName: z.string().trim().min(1, 'Hospital name is required').optional(),
   contact: z.string().optional(),
-  email: z.union([z.string().email(), z.literal('')]).optional(),
+  email: z
+    .union([z.string().email('Enter a valid email address'), z.literal('')])
+    .optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   tagline: z.string().optional(),
@@ -25,7 +28,7 @@ export const settingsRoutes: FastifyPluginAsync = async (app) => {
 
   app.patch('/', { preHandler: [app.requireAdmin] }, async (req, reply) => {
     const parsed = schema.safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return sendValidationError(reply, parsed.error);
 
     const existing = await prisma.hospitalSettings.findFirst();
     if (!existing) {

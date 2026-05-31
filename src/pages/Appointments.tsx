@@ -12,6 +12,12 @@ import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import Badge from '../components/Badge';
+import FormField, { fieldInputClass } from '../components/FormField';
+import {
+  getPakistanDateString,
+  getPakistanMinTime,
+} from '../lib/pakistan-time';
+import { mergeValidationErrors, validateAppointmentForm } from '../lib/validation-errors';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'info'> = {
   Completed: 'success',
@@ -26,7 +32,7 @@ export default function Appointments() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const confirmDelete = useConfirmDelete();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getPakistanDateString());
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const qc = useQueryClient();
@@ -55,13 +61,17 @@ export default function Appointments() {
   const [time, setTime] = useState('09:00');
   const [status, setStatus] = useState('Scheduled');
   const [notes, setNotes] = useState('');
+  const [originalTime, setOriginalTime] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const resetForm = () => {
     setPatientId('');
     setDoctorId('');
-    setTime('09:00');
+    setTime(date === getPakistanDateString() ? getPakistanMinTime() : '09:00');
     setStatus('Scheduled');
     setNotes('');
+    setOriginalTime(null);
+    setFieldErrors({});
   };
 
   const closeModal = () => {
@@ -75,6 +85,7 @@ export default function Appointments() {
     setPatientId(a.patientId);
     setDoctorId(a.doctorId ?? '');
     setTime(a.appointmentTime ?? '09:00');
+    setOriginalTime(a.appointmentTime ?? '09:00');
     setStatus(a.status);
     setNotes(a.notes ?? '');
   };
@@ -113,6 +124,8 @@ export default function Appointments() {
   });
 
   const pending = create.isPending || update.isPending;
+  const submitError = create.error ?? update.error;
+  const mergedErrors = mergeValidationErrors(fieldErrors, submitError);
 
   return (
     <div>
@@ -216,6 +229,21 @@ export default function Appointments() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            const errors = validateAppointmentForm({
+              patientId,
+              appointmentDate: date,
+              appointmentTime: time,
+              existingAppointments: appointments,
+              excludeId: editId,
+              originalTime,
+            });
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
+              return;
+            }
+
+            setFieldErrors({});
             if (editId) {
               update.mutate({
                 id: editId,
@@ -236,14 +264,15 @@ export default function Appointments() {
             }
           }}
         >
-          <label className="block text-sm font-medium">
-            Patient *
+          <FormField label="Patient" required error={mergedErrors.patientId}>
             <select
-              required
               disabled={!!editId}
               value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
-              className="input mt-1.5 disabled:bg-slate-50 disabled:text-slate-500"
+              onChange={(e) => {
+                setFieldErrors((prev) => ({ ...prev, patientId: undefined }));
+                setPatientId(e.target.value);
+              }}
+              className={fieldInputClass(!!mergedErrors.patientId, 'disabled:bg-slate-50 disabled:text-slate-500')}
             >
               <option value="">Select patient</option>
               {patients?.items.map((p) => (
@@ -252,13 +281,12 @@ export default function Appointments() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="block text-sm font-medium">
-            Doctor
+          </FormField>
+          <FormField label="Doctor" error={mergedErrors.doctorId}>
             <select
               value={doctorId}
               onChange={(e) => setDoctorId(e.target.value)}
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.doctorId)}
             >
               <option value="">Any / TBD</option>
               {doctors?.map((d) => (
@@ -267,16 +295,24 @@ export default function Appointments() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="block text-sm font-medium">
-            Time
+          </FormField>
+          <FormField label="Time" error={mergedErrors.appointmentTime}>
             <input
               type="time"
               value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="input mt-1.5"
+              min={date === getPakistanDateString() ? getPakistanMinTime() : undefined}
+              onChange={(e) => {
+                setFieldErrors((prev) => ({ ...prev, appointmentTime: undefined }));
+                setTime(e.target.value);
+              }}
+              className={fieldInputClass(!!mergedErrors.appointmentTime)}
             />
-          </label>
+          </FormField>
+          {!editId && date === getPakistanDateString() && (
+            <p className="text-xs text-slate-500">
+              Appointments use Pakistan time (PKT). Past times cannot be booked.
+            </p>
+          )}
           {editId && (
             <>
               <label className="block text-sm font-medium">
@@ -303,6 +339,11 @@ export default function Appointments() {
                 />
               </label>
             </>
+          )}
+          {submitError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {submitError.message}
+            </p>
           )}
           <button type="submit" disabled={pending} className="btn-primary w-full">
             {pending ? 'Saving…' : editId ? 'Update appointment' : 'Confirm booking'}

@@ -11,7 +11,7 @@ A full-stack hospital management web app: patients, doctors, appointments, depar
 - **Departments** — organize hospital units (GOPD, surgery, etc.)
 - **Pharmacy** — drug inventory, stock, and pricing
 - **Settings** — hospital name, contact, address, currency (admin only to edit)
-- **Login slideshow** — rotating healthcare images on the sign-in screen (`public/login/slide-01.jpg` … `slide-20.jpg`)
+- **Lock screen login** — clean sign-in screen with Pakistan time (PKT), no slideshow
 - **URL routing** — bookmarkable pages (`/dashboard`, `/patients`, `/doctors`, etc.)
 - **Session timeout** — automatic logout after **1 hour** of inactivity
 - **Role-based access** — admin vs simple user (see [User accounts](#user-accounts))
@@ -89,6 +89,16 @@ Delete actions are hidden in the UI for simple users and blocked on the API with
 | `/departments` | Departments |
 | `/pharmacy` | Pharmacy |
 | `/settings` | Settings |
+
+## Login screen
+
+The sign-in page is a simple **lock screen** style login:
+
+- Large clock and date (Pakistan time — PKT)
+- Glass-style unlock card with username and password
+- No slideshow or background images — fast load, works offline
+
+Always open the app at **http://localhost:8080** (include the port). Hard refresh on `/dashboard`, `/patients`, etc. is supported.
 
 ## Pakistan CNIC & phone formats
 
@@ -184,7 +194,7 @@ Health check: `GET /api/health`
 Health_Care/
 ├── src/                    React frontend
 │   ├── pages/              Dashboard, Patients, Doctors, etc.
-│   ├── components/         Layout, modals, LoginSlideshow, ActionButtons
+│   ├── components/         Layout, modals, ActionButtons
 │   ├── context/            Auth (JWT, isAdmin)
 │   ├── hooks/              Session timeout
 │   └── lib/                API client, routes, Pakistan input helpers
@@ -192,7 +202,6 @@ Health_Care/
 │   ├── src/routes/         REST route handlers
 │   ├── src/plugins/        JWT auth helpers
 │   └── prisma/             Schema, migrations, seed
-├── public/login/           Login slideshow images (slide-01 … slide-20)
 ├── nginx/                  Production nginx config (proxies /api)
 ├── docker-compose.yml      db + api + web
 ├── Dockerfile              Frontend image

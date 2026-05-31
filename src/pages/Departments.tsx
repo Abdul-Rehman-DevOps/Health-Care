@@ -10,7 +10,9 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import ActionButtons from '../components/ActionButtons';
 import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
+import FormField, { fieldInputClass } from '../components/FormField';
 import EmptyState from '../components/EmptyState';
+import { mergeValidationErrors, requiredField } from '../lib/validation-errors';
 
 const COLORS = ['#0D9488', '#0891B2', '#7C3AED', '#BE185D', '#2563EB', '#059669'];
 
@@ -32,6 +34,7 @@ export default function Departments() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<NewDepartment>(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const qc = useQueryClient();
 
   const modalOpen = open || !!editId;
@@ -78,10 +81,12 @@ export default function Departments() {
     setOpen(false);
     setEditId(null);
     setForm(emptyForm);
+    setFieldErrors({});
   };
 
   const pending = create.isPending || update.isPending;
-  const formError = create.error?.message ?? update.error?.message;
+  const submitError = create.error ?? update.error;
+  const mergedErrors = mergeValidationErrors(fieldErrors, submitError);
 
   return (
     <div>
@@ -184,6 +189,20 @@ export default function Departments() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            const errors: Record<string, string> = {};
+            const nameErr = requiredField(form.name, 'Department name');
+            if (nameErr) errors.name = nameErr;
+            const codeErr = requiredField(form.code, 'Department code');
+            if (codeErr) errors.code = codeErr;
+            else if (form.code.trim().length < 2) {
+              errors.code = 'Department code must be at least 2 characters';
+            }
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
+              return;
+            }
+            setFieldErrors({});
             if (editId) {
               update.mutate({ id: editId, data: form });
             } else {
@@ -191,37 +210,36 @@ export default function Departments() {
             }
           }}
         >
-          <label className="block text-sm font-medium">
-            Department name *
+          <FormField label="Department name" required error={mergedErrors.name}>
             <input
-              required
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="input mt-1.5"
+              onChange={(e) => {
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                setForm({ ...form, name: e.target.value });
+              }}
+              className={fieldInputClass(!!mergedErrors.name)}
               placeholder="e.g. Cardiology"
             />
-          </label>
-          <label className="block text-sm font-medium">
-            Code *
+          </FormField>
+          <FormField label="Code" required error={mergedErrors.code}>
             <input
-              required
               maxLength={10}
               value={form.code}
-              onChange={(e) =>
-                setForm({ ...form, code: e.target.value.toUpperCase() })
-              }
-              className="input mt-1.5 font-mono"
+              onChange={(e) => {
+                setFieldErrors((prev) => ({ ...prev, code: undefined }));
+                setForm({ ...form, code: e.target.value.toUpperCase() });
+              }}
+              className={fieldInputClass(!!mergedErrors.code, 'font-mono')}
               placeholder="e.g. CARD"
             />
-          </label>
-          <label className="block text-sm font-medium">
-            Description
+          </FormField>
+          <FormField label="Description" error={mergedErrors.description}>
             <input
               value={form.description ?? ''}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.description)}
             />
-          </label>
+          </FormField>
           <label className="block text-sm font-medium">
             Color
             <div className="mt-2 flex flex-wrap gap-2">
@@ -238,7 +256,11 @@ export default function Departments() {
               ))}
             </div>
           </label>
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {submitError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {submitError.message}
+            </p>
+          )}
           <button type="submit" disabled={pending} className="btn-primary w-full">
             {pending ? 'Saving…' : editId ? 'Update department' : 'Add department'}
           </button>

@@ -70,6 +70,23 @@ export function validatePakPhone(
   return null;
 }
 
+/** True when input looks like a phone number rather than a plain name. */
+export function looksLikePhoneInput(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  const d = digitsOnly(trimmed);
+  return trimmed.startsWith('+') || trimmed.startsWith('0') || d.length >= 7;
+}
+
+export function validateOptionalPhoneOrName(
+  value: string | undefined,
+  label = 'Emergency contact'
+): string | null {
+  if (!value?.trim()) return null;
+  if (!looksLikePhoneInput(value)) return null;
+  return validatePakPhone(value, label);
+}
+
 export function displayCnic(value: string | null | undefined): string {
   if (!value) return '—';
   const formatted = formatCnicInput(value);

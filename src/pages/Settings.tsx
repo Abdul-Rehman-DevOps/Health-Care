@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
@@ -12,6 +13,8 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { fieldInputClass } from '../components/FormField';
+import { getValidationFields } from '../lib/validation-errors';
 
 const fields = [
   { name: 'hospitalName', label: 'Hospital name', icon: Building2 },
@@ -26,6 +29,7 @@ export default function Settings() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { data, isLoading, error } = useQuery({
     queryKey: ['settings'],
     queryFn: api.settings.get,
@@ -36,10 +40,14 @@ export default function Settings() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['settings'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      setFieldErrors({});
       toast('Settings saved successfully');
     },
     onError: (e: Error) => toast(e.message, 'error'),
   });
+
+  const serverFields = getValidationFields(update.error) ?? {};
+  const mergedErrors = { ...fieldErrors, ...serverFields };
 
   if (isLoading) return <LoadingSpinner />;
   if (error || !data) {
@@ -115,10 +123,27 @@ export default function Settings() {
             e.preventDefault();
             if (!isAdmin) return;
             const fd = new FormData(e.currentTarget);
+            const hospitalName = fd.get('hospitalName') as string;
+            const email = fd.get('email') as string;
+            const errors: Record<string, string> = {};
+
+            if (!hospitalName?.trim()) {
+              errors.hospitalName = 'Hospital name is required';
+            }
+            if (email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+              errors.email = 'Enter a valid email address';
+            }
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
+              return;
+            }
+
+            setFieldErrors({});
             update.mutate({
-              hospitalName: fd.get('hospitalName') as string,
+              hospitalName,
               contact: fd.get('contact') as string,
-              email: fd.get('email') as string,
+              email,
               address: fd.get('address') as string,
               city: fd.get('city') as string,
               tagline: fd.get('tagline') as string,
@@ -136,15 +161,28 @@ export default function Settings() {
                   <Icon className="h-3.5 w-3.5" />
                 </span>
                 {label}
+                {name === 'hospitalName' && <span className="text-red-500"> *</span>}
               </span>
               <input
                 name={name}
                 defaultValue={(data[name as keyof typeof data] as string) ?? ''}
                 disabled={!isAdmin}
-                className="input transition focus:scale-[1.01] disabled:bg-slate-50 disabled:text-slate-500"
+                onChange={() =>
+                  setFieldErrors((prev) => ({ ...prev, [name]: undefined }))
+                }
+                className={`${fieldInputClass(!!mergedErrors[name])} transition focus:scale-[1.01] disabled:bg-slate-50 disabled:text-slate-500`}
               />
+              {mergedErrors[name] && (
+                <p className="mt-1 text-xs font-medium text-red-600">{mergedErrors[name]}</p>
+              )}
             </label>
           ))}
+
+          {update.error && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {update.error.message}
+            </p>
+          )}
 
           {isAdmin && (
             <button

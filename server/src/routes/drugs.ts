@@ -1,9 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { sendValidationError } from '../lib/validation.js';
 
 const createSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().trim().min(1, 'Drug name is required'),
   genericName: z.string().optional(),
   brand: z.string().optional(),
   category: z.string().optional(),
@@ -15,7 +16,13 @@ const createSchema = z.object({
 });
 
 const stockSchema = z.object({
-  stockQuantity: z.number().int().nonnegative(),
+  stockQuantity: z
+    .number({
+      required_error: 'Stock quantity is required',
+      invalid_type_error: 'Stock quantity is required',
+    })
+    .int('Stock quantity must be a whole number')
+    .nonnegative('Stock quantity cannot be negative'),
 });
 
 export const drugRoutes: FastifyPluginAsync = async (app) => {
@@ -33,7 +40,7 @@ export const drugRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/', async (req, reply) => {
     const parsed = createSchema.safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return sendValidationError(reply, parsed.error);
     const drug = await prisma.drug.create({ data: parsed.data });
     return reply.code(201).send(drug);
   });
@@ -41,7 +48,7 @@ export const drugRoutes: FastifyPluginAsync = async (app) => {
   app.patch('/:id/stock', async (req, reply) => {
     const { id } = req.params as { id: string };
     const parsed = stockSchema.safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return sendValidationError(reply, parsed.error);
     try {
       const drug = await prisma.drug.update({
         where: { id },
@@ -56,7 +63,7 @@ export const drugRoutes: FastifyPluginAsync = async (app) => {
   app.patch('/:id', async (req, reply) => {
     const { id } = req.params as { id: string };
     const parsed = createSchema.partial().safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    if (!parsed.success) return sendValidationError(reply, parsed.error);
     try {
       const drug = await prisma.drug.update({ where: { id }, data: parsed.data });
       return drug;

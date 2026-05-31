@@ -1,10 +1,15 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { sendValidationError } from '../lib/validation.js';
 
 const createSchema = z.object({
-  name: z.string().min(1),
-  code: z.string().min(2).max(10),
+  name: z.string().trim().min(1, 'Department name is required'),
+  code: z
+    .string()
+    .trim()
+    .min(2, 'Department code is required')
+    .max(10, 'Department code must be at most 10 characters'),
   description: z.string().optional(),
   color: z.string().optional(),
 });
@@ -20,8 +25,7 @@ export const departmentRoutes: FastifyPluginAsync = async (app) => {
   app.post('/', { preHandler: [app.requireAdmin] }, async (req, reply) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
-      reply.code(400).send({ error: parsed.error.flatten() });
-      return;
+      return sendValidationError(reply, parsed.error);
     }
     try {
       const department = await prisma.department.create({
@@ -47,8 +51,7 @@ export const departmentRoutes: FastifyPluginAsync = async (app) => {
     const { id } = req.params as { id: string };
     const parsed = createSchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      reply.code(400).send({ error: parsed.error.flatten() });
-      return;
+      return sendValidationError(reply, parsed.error);
     }
     try {
       const data = {

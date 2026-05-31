@@ -12,6 +12,7 @@ import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import Badge from '../components/Badge';
+import FormField, { fieldInputClass } from '../components/FormField';
 import {
   displayPakPhone,
   formatPakPhoneInput,
@@ -19,6 +20,10 @@ import {
   allowDigitKey,
   validatePakPhone,
 } from '../lib/pakistan-inputs';
+import {
+  mergeValidationErrors,
+  requiredField,
+} from '../lib/validation-errors';
 
 const emptyForm: NewDoctor = { name: '' };
 
@@ -40,7 +45,7 @@ export default function Doctors() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<NewDoctor>(emptyForm);
-  const [contactError, setContactError] = useState<string>();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const qc = useQueryClient();
 
   const modalOpen = open || !!editId;
@@ -94,11 +99,12 @@ export default function Doctors() {
     setOpen(false);
     setEditId(null);
     setForm(emptyForm);
-    setContactError(undefined);
+    setFieldErrors({});
   };
 
   const pending = create.isPending || update.isPending;
-  const formError = create.error?.message ?? update.error?.message;
+  const submitError = create.error ?? update.error;
+  const mergedErrors = mergeValidationErrors(fieldErrors, submitError);
 
   return (
     <div>
@@ -205,12 +211,19 @@ export default function Doctors() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            const err = validatePakPhone(form.contact, 'Contact');
-            if (err) {
-              setContactError(err);
+            const errors: Record<string, string> = {};
+            const nameErr = requiredField(form.name, 'Full name');
+            if (nameErr) errors.name = nameErr;
+            const contactErr = form.contact?.trim()
+              ? validatePakPhone(form.contact, 'Contact')
+              : null;
+            if (contactErr) errors.contact = contactErr;
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
               return;
             }
-            setContactError(undefined);
+            setFieldErrors({});
             if (editId) {
               update.mutate({ id: editId, data: form });
             } else {
@@ -218,31 +231,30 @@ export default function Doctors() {
             }
           }}
         >
-          <label className="block text-sm font-medium text-slate-700">
-            Full name *
+          <FormField label="Full name" required error={mergedErrors.name}>
             <input
-              required
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="input mt-1.5"
+              onChange={(e) => {
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                setForm({ ...form, name: e.target.value });
+              }}
+              className={fieldInputClass(!!mergedErrors.name)}
             />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Specialization
+          </FormField>
+          <FormField label="Specialization" error={mergedErrors.specialization}>
             <input
               value={form.specialization ?? ''}
               onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.specialization)}
             />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Department
+          </FormField>
+          <FormField label="Department" error={mergedErrors.departmentId}>
             <select
               value={form.departmentId ?? ''}
               onChange={(e) =>
                 setForm({ ...form, departmentId: e.target.value || undefined })
               }
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.departmentId)}
             >
               <option value="">Select department</option>
               {departments?.map((dep) => (
@@ -251,13 +263,12 @@ export default function Doctors() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Contact
+          </FormField>
+          <FormField label="Contact" error={mergedErrors.contact}>
             <input
               value={form.contact ?? ''}
               onChange={(e) => {
-                setContactError(undefined);
+                setFieldErrors((prev) => ({ ...prev, contact: undefined }));
                 setForm({ ...form, contact: formatPakPhoneInput(e.target.value) });
               }}
               onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
@@ -268,17 +279,13 @@ export default function Doctors() {
               onFocus={() => {
                 if (!form.contact) setForm({ ...form, contact: '+92 ' });
               }}
-              className="input mt-1.5 font-mono"
+              className={fieldInputClass(!!mergedErrors.contact, 'font-mono')}
               placeholder={PHONE_PLACEHOLDER}
               inputMode="tel"
               maxLength={16}
             />
-            {contactError && (
-              <p className="mt-1 text-xs font-medium text-red-600">{contactError}</p>
-            )}
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Consultation fee (PKR)
+          </FormField>
+          <FormField label="Consultation fee (PKR)" error={mergedErrors.fee}>
             <input
               type="number"
               min={0}
@@ -289,10 +296,14 @@ export default function Doctors() {
                   fee: e.target.value ? Number(e.target.value) : undefined,
                 })
               }
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.fee)}
             />
-          </label>
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          </FormField>
+          {submitError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {submitError.message}
+            </p>
+          )}
           <button type="submit" disabled={pending} className="btn-primary w-full">
             {pending ? 'Saving…' : editId ? 'Update doctor' : 'Add doctor'}
           </button>

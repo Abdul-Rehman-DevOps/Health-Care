@@ -22,7 +22,13 @@ import {
   allowDigitKey,
   validateCnic,
   validatePakPhone,
+  validateOptionalPhoneOrName,
 } from '../lib/pakistan-inputs';
+import {
+  getValidationFields,
+  validatePatientForm,
+  type PatientFormErrors,
+} from '../lib/validation-errors';
 
 const emptyForm: NewPatient = { name: '', gender: 'Male' };
 
@@ -69,7 +75,6 @@ export default function Patients() {
       setForm(emptyForm);
       toast('Patient added');
     },
-    onError: (e: Error) => toast(e.message, 'error'),
   });
 
   const update = useMutation({
@@ -81,7 +86,6 @@ export default function Patients() {
       setForm(emptyForm);
       toast('Patient updated');
     },
-    onError: (e: Error) => toast(e.message, 'error'),
   });
 
   const remove = useMutation({
@@ -212,7 +216,7 @@ export default function Patients() {
           setForm={setForm}
           onSubmit={() => create.mutate(form)}
           pending={create.isPending}
-          error={create.error?.message}
+          submitError={create.error}
           submitLabel="Save patient"
         />
       </Modal>
@@ -230,7 +234,7 @@ export default function Patients() {
           setForm={setForm}
           onSubmit={() => editId && update.mutate({ id: editId, data: form })}
           pending={update.isPending}
-          error={update.error?.message}
+          submitError={update.error}
           submitLabel="Update patient"
         />
       </Modal>
@@ -294,74 +298,93 @@ function PatientForm({
   setForm,
   onSubmit,
   pending,
-  error,
+  submitError,
   submitLabel = 'Save patient',
 }: {
   form: NewPatient;
   setForm: (f: NewPatient) => void;
   onSubmit: () => void;
   pending: boolean;
-  error?: string;
+  submitError?: Error | null;
   submitLabel?: string;
 }) {
-  const [fieldErrors, setFieldErrors] = useState<{
-    cnic?: string;
-    contact?: string;
-    emergencyContact?: string;
-  }>({});
+  const [fieldErrors, setFieldErrors] = useState<PatientFormErrors>({});
+
+  function runValidation(): PatientFormErrors {
+    const errors: PatientFormErrors = {
+      ...validatePatientForm(form),
+    };
+
+    const contactErr = form.contact?.trim()
+      ? validatePakPhone(form.contact, 'Contact')
+      : null;
+    if (contactErr) errors.contact = contactErr;
+
+    const emergencyErr = validateOptionalPhoneOrName(
+      form.emergencyContact,
+      'Emergency contact'
+    );
+    if (emergencyErr) errors.emergencyContact = emergencyErr;
+
+    const cnicErr = validateCnic(form.cnic);
+    if (cnicErr) errors.cnic = cnicErr;
+
+    return errors;
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const cnicErr = validateCnic(form.cnic);
-    const contactErr = validatePakPhone(form.contact, 'Contact');
-    const emergencyErr = validatePakPhone(form.emergencyContact, 'Emergency contact');
-
-    if (cnicErr || contactErr || emergencyErr) {
-      setFieldErrors({
-        cnic: cnicErr ?? undefined,
-        contact: contactErr ?? undefined,
-        emergencyContact: emergencyErr ?? undefined,
-      });
+    const errors = runValidation();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
-
     setFieldErrors({});
     onSubmit();
   }
+
+  const serverFields = getValidationFields(submitError);
+  const mergedErrors = { ...fieldErrors, ...serverFields };
 
   return (
     <form
       className="max-h-[70vh] space-y-4 overflow-y-auto pr-1"
       onSubmit={handleSubmit}
     >
-      <Field label="Full name" required>
+      <Field label="Full name" required error={mergedErrors.name}>
         <input
-          required
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="input"
+          onChange={(e) => {
+            setFieldErrors((prev) => ({ ...prev, name: undefined }));
+            setForm({ ...form, name: e.target.value });
+          }}
+          className={inputClass(!!mergedErrors.name)}
         />
       </Field>
-      <Field label="Father / guardian name">
+      <Field label="Father / guardian name" required error={mergedErrors.fatherName}>
         <input
           value={form.fatherName ?? ''}
-          onChange={(e) => setForm({ ...form, fatherName: e.target.value })}
-          className="input"
+          onChange={(e) => {
+            setFieldErrors((prev) => ({ ...prev, fatherName: undefined }));
+            setForm({ ...form, fatherName: e.target.value });
+          }}
+          className={inputClass(!!mergedErrors.fatherName)}
         />
       </Field>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Age">
+        <Field label="Age" required error={mergedErrors.age}>
           <input
             type="number"
-            min={0}
+            min={1}
             value={form.age ?? ''}
-            onChange={(e) =>
+            onChange={(e) => {
+              setFieldErrors((prev) => ({ ...prev, age: undefined }));
               setForm({
                 ...form,
                 age: e.target.value ? Number(e.target.value) : undefined,
-              })
-            }
-            className="input"
+              });
+            }}
+            className={inputClass(!!mergedErrors.age)}
           />
         </Field>
         <Field label="Gender">
@@ -378,13 +401,13 @@ function PatientForm({
           </select>
         </Field>
       </div>
-      <Field label="CNIC" error={fieldErrors.cnic}>
+      <Field label="CNIC" error={mergedErrors.cnic}>
         <input
           value={form.cnic ?? ''}
           onChange={(e) => {
             const formatted = formatCnicInput(e.target.value);
-            setForm({ ...form, cnic: formatted });
             setFieldErrors((prev) => ({ ...prev, cnic: undefined }));
+            setForm({ ...form, cnic: formatted });
           }}
           onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
           onPaste={(e) => {
@@ -398,14 +421,14 @@ function PatientForm({
               cnic: validateCnic(form.cnic) ?? undefined,
             }));
           }}
-          className={`input font-mono ${fieldErrors.cnic ? 'border-red-300 focus:border-red-500 focus:ring-red-500/25' : ''}`}
+          className={`${inputClass(!!mergedErrors.cnic, 'font-mono')}`}
           placeholder={CNIC_PLACEHOLDER}
           inputMode="numeric"
           pattern="[0-9-]*"
           maxLength={15}
         />
       </Field>
-      <Field label="Contact" error={fieldErrors.contact}>
+      <Field label="Contact" required error={mergedErrors.contact}>
         <input
           value={form.contact ?? ''}
           onChange={(e) => {
@@ -420,45 +443,35 @@ function PatientForm({
           onFocus={() => {
             if (!form.contact) setForm({ ...form, contact: '+92 ' });
           }}
-          className="input font-mono"
+          className={inputClass(!!mergedErrors.contact, 'font-mono')}
           placeholder={PHONE_PLACEHOLDER}
           inputMode="tel"
           maxLength={16}
         />
       </Field>
-      <Field label="Emergency contact" error={fieldErrors.emergencyContact}>
+      <Field
+        label="Emergency contact (name or phone)"
+        error={mergedErrors.emergencyContact}
+      >
         <input
           value={form.emergencyContact ?? ''}
           onChange={(e) => {
             setFieldErrors((prev) => ({ ...prev, emergencyContact: undefined }));
-            setForm({
-              ...form,
-              emergencyContact: formatPakPhoneInput(e.target.value),
-            });
+            setForm({ ...form, emergencyContact: e.target.value });
           }}
-          onKeyDown={(e) => allowDigitKey(e.nativeEvent)}
-          onPaste={(e) => {
-            e.preventDefault();
-            setForm({
-              ...form,
-              emergencyContact: formatPakPhoneInput(e.clipboardData.getData('text')),
-            });
-          }}
-          onFocus={() => {
-            if (!form.emergencyContact) setForm({ ...form, emergencyContact: '+92 ' });
-          }}
-          className="input font-mono"
-          placeholder={PHONE_PLACEHOLDER}
-          inputMode="tel"
-          maxLength={16}
+          className={inputClass(!!mergedErrors.emergencyContact)}
+          placeholder="e.g. Nani or +92 3XX-XXXXXXX"
         />
       </Field>
-      <Field label="Address">
+      <Field label="Address" required error={mergedErrors.address}>
         <textarea
           rows={2}
           value={form.address ?? ''}
-          onChange={(e) => setForm({ ...form, address: e.target.value })}
-          className="input resize-none"
+          onChange={(e) => {
+            setFieldErrors((prev) => ({ ...prev, address: undefined }));
+            setForm({ ...form, address: e.target.value });
+          }}
+          className={inputClass(!!mergedErrors.address, 'resize-none')}
         />
       </Field>
       <Field label="Blood group">
@@ -469,11 +482,14 @@ function PatientForm({
           placeholder="e.g. B+"
         />
       </Field>
-      <Field label="Illness / condition">
+      <Field label="Illness / condition" required error={mergedErrors.allergies}>
         <input
           value={form.allergies ?? ''}
-          onChange={(e) => setForm({ ...form, allergies: e.target.value })}
-          className="input"
+          onChange={(e) => {
+            setFieldErrors((prev) => ({ ...prev, allergies: undefined }));
+            setForm({ ...form, allergies: e.target.value });
+          }}
+          className={inputClass(!!mergedErrors.allergies)}
           placeholder="e.g. fever, diabetes, injury…"
         />
       </Field>
@@ -486,14 +502,21 @@ function PatientForm({
           placeholder="Visit history, treatment, other details…"
         />
       </Field>
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+      {submitError && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {submitError.message}
+        </p>
       )}
       <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? 'Saving…' : submitLabel}
       </button>
     </form>
   );
+}
+
+function inputClass(hasError: boolean, extra = '') {
+  const err = hasError ? 'border-red-300 focus:border-red-500 focus:ring-red-500/25' : '';
+  return ['input', extra, err].filter(Boolean).join(' ');
 }
 
 function DetailGrid({ patient: p }: { patient: Patient }) {

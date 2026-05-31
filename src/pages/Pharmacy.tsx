@@ -11,6 +11,8 @@ import ActionButtons from '../components/ActionButtons';
 import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Badge from '../components/Badge';
+import FormField, { fieldInputClass } from '../components/FormField';
+import { mergeValidationErrors, requiredField } from '../lib/validation-errors';
 
 const emptyForm: NewDrug = { name: '', stockQuantity: 0, salePrice: 0 };
 
@@ -37,6 +39,8 @@ export default function Pharmacy() {
   );
   const [form, setForm] = useState<NewDrug>(emptyForm);
   const [stockQty, setStockQty] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [stockFieldErrors, setStockFieldErrors] = useState<Record<string, string>>({});
   const qc = useQueryClient();
 
   const formModalOpen = addOpen || !!editId;
@@ -96,10 +100,14 @@ export default function Pharmacy() {
     setAddOpen(false);
     setEditId(null);
     setForm(emptyForm);
+    setFieldErrors({});
   };
 
   const pending = create.isPending || update.isPending;
-  const formError = create.error?.message ?? update.error?.message;
+  const submitError = create.error ?? update.error;
+  const mergedErrors = mergeValidationErrors(fieldErrors, submitError);
+  const stockSubmitError = updateStock.error;
+  const mergedStockErrors = mergeValidationErrors(stockFieldErrors, stockSubmitError);
 
   return (
     <div>
@@ -212,6 +220,18 @@ export default function Pharmacy() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            const errors: Record<string, string> = {};
+            const nameErr = requiredField(form.name, 'Drug name');
+            if (nameErr) errors.name = nameErr;
+            if (!editId && (form.stockQuantity == null || form.stockQuantity < 0)) {
+              errors.stockQuantity = 'Stock quantity cannot be negative';
+            }
+
+            if (Object.keys(errors).length > 0) {
+              setFieldErrors(errors);
+              return;
+            }
+            setFieldErrors({});
             if (editId) {
               update.mutate({ id: editId, data: form });
             } else {
@@ -219,48 +239,50 @@ export default function Pharmacy() {
             }
           }}
         >
-          <label className="block text-sm font-medium">
-            Drug name *
+          <FormField label="Drug name" required error={mergedErrors.name}>
             <input
-              required
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="input mt-1.5"
+              onChange={(e) => {
+                setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                setForm({ ...form, name: e.target.value });
+              }}
+              className={fieldInputClass(!!mergedErrors.name)}
             />
-          </label>
-          <label className="block text-sm font-medium">
-            Generic name
+          </FormField>
+          <FormField label="Generic name" error={mergedErrors.genericName}>
             <input
               value={form.genericName ?? ''}
               onChange={(e) => setForm({ ...form, genericName: e.target.value })}
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.genericName)}
             />
-          </label>
-          <label className="block text-sm font-medium">
-            Category
+          </FormField>
+          <FormField label="Category" error={mergedErrors.category}>
             <input
               value={form.category ?? ''}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="input mt-1.5"
+              className={fieldInputClass(!!mergedErrors.category)}
             />
-          </label>
+          </FormField>
           <div className="grid grid-cols-2 gap-4">
             {!editId && (
-              <label className="block text-sm font-medium">
-                Stock qty
+              <FormField label="Stock qty" error={mergedErrors.stockQuantity}>
                 <input
                   type="number"
                   min={0}
                   value={form.stockQuantity ?? 0}
-                  onChange={(e) =>
-                    setForm({ ...form, stockQuantity: Number(e.target.value) })
-                  }
-                  className="input mt-1.5"
+                  onChange={(e) => {
+                    setFieldErrors((prev) => ({ ...prev, stockQuantity: undefined }));
+                    setForm({ ...form, stockQuantity: Number(e.target.value) });
+                  }}
+                  className={fieldInputClass(!!mergedErrors.stockQuantity)}
                 />
-              </label>
+              </FormField>
             )}
-            <label className={`block text-sm font-medium ${editId ? 'col-span-2' : ''}`}>
-              Sale price
+            <FormField
+              label="Sale price"
+              className={editId ? 'col-span-2' : ''}
+              error={mergedErrors.salePrice}
+            >
               <input
                 type="number"
                 min={0}
@@ -268,11 +290,15 @@ export default function Pharmacy() {
                 onChange={(e) =>
                   setForm({ ...form, salePrice: Number(e.target.value) })
                 }
-                className="input mt-1.5"
+                className={fieldInputClass(!!mergedErrors.salePrice)}
               />
-            </label>
+            </FormField>
           </div>
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {submitError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {submitError.message}
+            </p>
+          )}
           <button type="submit" disabled={pending} className="btn-primary w-full">
             {pending ? 'Saving…' : editId ? 'Update medicine' : 'Add to pharmacy'}
           </button>
@@ -288,19 +314,31 @@ export default function Pharmacy() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            if (stockQty < 0) {
+              setStockFieldErrors({ stockQuantity: 'Stock quantity cannot be negative' });
+              return;
+            }
+            setStockFieldErrors({});
             if (stockOpen) updateStock.mutate({ id: stockOpen.id, qty: stockQty });
           }}
         >
-          <label className="block text-sm font-medium">
-            Quantity in stock
+          <FormField label="Quantity in stock" error={mergedStockErrors.stockQuantity}>
             <input
               type="number"
               min={0}
               value={stockQty}
-              onChange={(e) => setStockQty(Number(e.target.value))}
-              className="input mt-1.5"
+              onChange={(e) => {
+                setStockFieldErrors({});
+                setStockQty(Number(e.target.value));
+              }}
+              className={fieldInputClass(!!mergedStockErrors.stockQuantity)}
             />
-          </label>
+          </FormField>
+          {stockSubmitError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {stockSubmitError.message}
+            </p>
+          )}
           <button type="submit" className="btn-primary w-full">
             Update stock
           </button>
