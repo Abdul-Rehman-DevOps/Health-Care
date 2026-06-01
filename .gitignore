@@ -9,3 +9,4 @@ dist-electron
 .idea
 .DS_Store
 *.log
+backups/

@@ -21,7 +21,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     });
 
     if (!user || !verifyPassword(parsed.data.password, user.passwordHash)) {
-      return reply.code(401).send({ error: 'Invalid username or password' });
+      return reply.code(400).send({ error: 'Invalid username or password' });
     }
 
     const payload: JwtUser = {

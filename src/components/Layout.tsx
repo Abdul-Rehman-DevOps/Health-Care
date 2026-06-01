@@ -1,20 +1,35 @@
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import {
   Building2,
   Calendar,
-  HeartPulse,
   LayoutDashboard,
   LogOut,
   Pill,
+  Info,
   Settings,
   Stethoscope,
   User,
   Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useHospitalBranding } from '../context/HospitalBrandingContext';
+import AppLogo from './AppLogo';
+import DeveloperCredit from './DeveloperCredit';
 import type { PageId } from '../lib/routes';
 
 export type { PageId };
+
+const PAGE_TITLES: Record<PageId, string> = {
+  dashboard: 'Dashboard',
+  patients: 'Patients',
+  doctors: 'Doctors',
+  appointments: 'Appointments',
+  departments: 'Departments',
+  pharmacy: 'Pharmacy',
+  settings: 'Settings',
+  about: 'About',
+};
 
 const nav: { id: PageId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,6 +39,7 @@ const nav: { id: PageId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'departments', label: 'Departments', icon: Building2 },
   { id: 'pharmacy', label: 'Pharmacy', icon: Pill },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'about', label: 'About', icon: Info },
 ];
 
 type Props = {
@@ -34,29 +50,32 @@ type Props = {
 
 export default function Layout({ page, onNavigate, children }: Props) {
   const { user, isAdmin, logout } = useAuth();
+  const { hospitalName } = useHospitalBranding();
   const roleLabel = isAdmin ? 'Admin' : 'Simple user';
 
+  useEffect(() => {
+    document.title = `${hospitalName}, ${PAGE_TITLES[page]}`;
+  }, [hospitalName, page]);
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="relative flex w-[270px] shrink-0 flex-col overflow-hidden bg-gradient-to-b from-brand-950 via-brand-900 to-brand-950 text-white">
+    <div className="flex h-screen overflow-hidden">
+      <aside className="fixed inset-y-0 left-0 z-30 flex w-[270px] flex-col overflow-hidden bg-gradient-to-b from-brand-950 via-brand-900 to-brand-950 text-white">
         <div className="pointer-events-none absolute -right-20 top-20 h-40 w-40 rounded-full bg-teal-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -left-10 bottom-32 h-32 w-32 rounded-full bg-brand-400/10 blur-2xl" />
 
         <div className="relative border-b border-white/10 px-6 py-7">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 animate-pulse-soft items-center justify-center rounded-2xl bg-white/15 shadow-lg ring-1 ring-white/20">
-              <HeartPulse className="h-6 w-6 text-brand-200" />
-            </div>
-            <div>
+            <AppLogo size="md" variant="light" />
+            <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-300/90">
                 Hospital System
               </p>
-              <p className="text-xl font-bold tracking-tight">Health Care</p>
+              <p className="truncate text-xl font-bold tracking-tight">{hospitalName}</p>
             </div>
           </div>
         </div>
 
-        <nav className="relative flex-1 space-y-1 px-3 py-4">
+        <nav className="relative min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {nav.map(({ id, label, icon: Icon }, i) => {
             const active = page === id;
             return (
@@ -82,7 +101,7 @@ export default function Layout({ page, onNavigate, children }: Props) {
           })}
         </nav>
 
-        <div className="relative border-t border-white/10 p-4">
+        <div className="relative shrink-0 border-t border-white/10 p-4">
           {user && (
             <div className="mb-3 rounded-xl bg-white/10 px-3 py-3 ring-1 ring-white/10 backdrop-blur-sm transition hover:bg-white/15">
               <div className="flex items-center gap-3">
@@ -115,19 +134,20 @@ export default function Layout({ page, onNavigate, children }: Props) {
             <LogOut className="h-4 w-4" />
             Sign out
           </button>
+          <DeveloperCredit variant="sidebar" className="mt-3 px-1" />
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-slate-200/80 bg-white/70 px-6 py-4 backdrop-blur-xl lg:px-10">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col pl-[270px]">
+        <header className="shrink-0 border-b border-slate-200/80 bg-white/70 px-6 py-4 backdrop-blur-xl lg:px-10">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse-soft rounded-full bg-brand-500" />
             <p className="bg-gradient-to-r from-brand-800 to-brand-600 bg-clip-text text-sm font-bold text-transparent">
-              Health Care
+              {hospitalName}
             </p>
           </div>
         </header>
-        <main className="relative flex-1 overflow-auto p-6 lg:p-10">
+        <main className="relative min-h-0 flex-1 overflow-y-auto p-6 lg:p-10">
           <div className="app-mesh pointer-events-none absolute inset-0" aria-hidden />
           <div className="relative">{children}</div>
         </main>

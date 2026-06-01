@@ -10,7 +10,9 @@ import { doctorRoutes } from './routes/doctors.js';
 import { departmentRoutes } from './routes/departments.js';
 import { appointmentRoutes } from './routes/appointments.js';
 import { drugRoutes } from './routes/drugs.js';
+import { brandingRoutes } from './routes/branding.js';
 import { settingsRoutes } from './routes/settings.js';
+import { userRoutes } from './routes/users.js';
 
 const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST ?? '0.0.0.0';
@@ -32,6 +34,8 @@ app.get('/api/health', async () => ({
   service: 'health-care-api',
 }));
 
+app.register(brandingRoutes, { prefix: '/api/branding' });
+
 app.register(authRoutes, { prefix: '/api/auth' });
 app.register(dashboardRoutes, { prefix: '/api/dashboard', ...protectedHook });
 app.register(patientRoutes, { prefix: '/api/patients', ...protectedHook });
@@ -40,6 +44,7 @@ app.register(departmentRoutes, { prefix: '/api/departments', ...protectedHook })
 app.register(appointmentRoutes, { prefix: '/api/appointments', ...protectedHook });
 app.register(drugRoutes, { prefix: '/api/drugs', ...protectedHook });
 app.register(settingsRoutes, { prefix: '/api/settings', ...protectedHook });
+app.register(userRoutes, { prefix: '/api/users', ...protectedHook });
 
 try {
   await app.listen({ port, host });

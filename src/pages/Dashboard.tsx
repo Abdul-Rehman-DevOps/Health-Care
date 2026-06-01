@@ -9,6 +9,7 @@ import {
   Users,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { useHospitalBranding } from '../context/HospitalBrandingContext';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
 import type { PageId } from '../components/Layout';
@@ -16,6 +17,7 @@ import type { PageId } from '../components/Layout';
 type Props = { onNavigate: (p: PageId) => void };
 
 export default function Dashboard({ onNavigate }: Props) {
+  const { hospitalName } = useHospitalBranding();
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard'],
     queryFn: api.dashboard,
@@ -31,7 +33,7 @@ export default function Dashboard({ onNavigate }: Props) {
     );
   }
 
-  const name = data?.hospitalName ?? 'Health Care';
+  const name = hospitalName;
 
   return (
     <div>

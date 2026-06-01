@@ -2,10 +2,16 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  AUTH_STORAGE_KEY,
+  clearAuthStorage,
+} from '../lib/auth-session';
 import { clearSessionActivity, recordSessionActivity } from '../hooks/useSessionTimeout';
 
 export type UserRole = 'admin' | 'user';
@@ -25,13 +31,11 @@ type AuthContextValue = {
   logout: () => void;
 };
 
-const STORAGE_KEY = 'health-care-auth';
-
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function loadStored(): { user: AuthUser; token: string } | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as { user: AuthUser; token: string };
   } catch {
@@ -47,15 +51,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((u: AuthUser, t: string) => {
     setUser(u);
     setToken(t);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: u, token: t }));
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: u, token: t }));
     recordSessionActivity();
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem(STORAGE_KEY);
+    clearAuthStorage();
     clearSessionActivity();
+  }, []);
+
+  useEffect(() => {
+    function onSessionExpired() {
+      setUser(null);
+      setToken(null);
+    }
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
   const value = useMemo(

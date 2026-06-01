@@ -11,6 +11,7 @@ import Appointments from './pages/Appointments';
 import Departments from './pages/Departments';
 import Pharmacy from './pages/Pharmacy';
 import Settings from './pages/Settings';
+import About from './pages/About';
 import { pageToPath, pathToPage, type PageId } from './lib/routes';
 
 function AppShell() {
@@ -53,6 +54,7 @@ function AppShell() {
     departments: <Departments />,
     pharmacy: <Pharmacy />,
     settings: <Settings />,
+    about: <About />,
   }[routePage];
 
   return (

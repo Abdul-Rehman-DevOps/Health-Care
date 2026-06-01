@@ -1,6 +1,10 @@
 # Health Care — full stack in Docker (DB + API + frontend)
 # Run: docker compose up --build -d
 # App: http://localhost:8080
+#
+# DATA PERSISTENCE: PostgreSQL stores all data in the named volume "health-care_pgdata".
+# Survives: container stop/start, app crashes, "docker compose down", machine reboot.
+# Data is LOST only if you run: docker compose down -v  (removes volumes on purpose).
 
 name: health-care
 
@@ -39,6 +43,7 @@ services:
       NODE_ENV: production
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-health-care-jwt-secret-change-in-production}
+      SKIP_DB_SEED: ${SKIP_DB_SEED:-0}
     expose:
       - "3000"
     healthcheck:
@@ -71,6 +76,8 @@ services:
 
 volumes:
   pgdata:
+    name: health-care_pgdata
+    driver: local
 
 networks:
   healthcare:

@@ -12,7 +12,9 @@
     "logs:api": "docker compose logs -f api",
     "up": "docker compose up --build",
     "build": "docker compose build",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "db:backup": "docker compose exec -T db pg_dump -U healthcare -d healthcare --no-owner --clean --if-exists",
+    "db:volume:inspect": "docker volume inspect health-care_pgdata"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.64.2",

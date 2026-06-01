@@ -23,6 +23,8 @@ const FIELD_LABELS: Record<string, string> = {
   stockQuantity: 'Stock quantity',
   salePrice: 'Sale price',
   hospitalName: 'Hospital name',
+  displayName: 'Display name',
+  role: 'Role',
   username: 'Username',
   password: 'Password',
 };

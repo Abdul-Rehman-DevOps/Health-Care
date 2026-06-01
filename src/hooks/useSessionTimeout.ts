@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 
+import { LAST_ACTIVITY_KEY } from '../lib/auth-session';
+
 export const SESSION_TIMEOUT_MS = 60 * 60 * 1000;
-export const LAST_ACTIVITY_KEY = 'health-care-last-activity';
+export { LAST_ACTIVITY_KEY };
 
 const CHECK_INTERVAL_MS = 30_000;
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'touchstart', 'scroll'] as const;

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HeartPulse, Lock, ShieldCheck, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, ShieldCheck, User } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useHospitalBranding } from '../context/HospitalBrandingContext';
+import AppLogo from '../components/AppLogo';
 
 function useLockScreenClock() {
   const [time, setTime] = useState('');
@@ -38,13 +40,23 @@ function useLockScreenClock() {
 }
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
+  const { hospitalName, tagline } = useHospitalBranding();
   const navigate = useNavigate();
   const { time, date } = useLockScreenClock();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    document.title = hospitalName;
+  }, [hospitalName]);
+
+  useEffect(() => {
+    logout();
+  }, [logout]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,23 +99,26 @@ export default function Login() {
 
         <div className="overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl">
           <div className="mb-6 flex flex-col items-center text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20">
-              <HeartPulse className="h-8 w-8 text-brand-100" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Health Care</h1>
-            <p className="mt-1 text-sm text-white/65">Hospital Management System</p>
+            <AppLogo size="lg" variant="light" />
+            <h1 className="mt-4 text-2xl font-bold tracking-tight text-white">{hospitalName}</h1>
+            <p className="mt-1 text-sm text-white/65">
+              {tagline || 'Hospital Management System'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block text-sm font-medium text-white/85">
               Username
               <div className="relative mt-1.5">
-                <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-200/80" />
+                <User
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700"
+                  aria-hidden
+                />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full rounded-xl border border-white/15 bg-white/95 px-3.5 py-2.5 pl-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30"
+                  className="w-full rounded-xl border border-white/15 bg-white/95 px-3.5 py-2.5 pl-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
                   placeholder="Enter username"
                   autoComplete="username"
                   required
@@ -114,16 +129,31 @@ export default function Login() {
             <label className="block text-sm font-medium text-white/85">
               Password
               <div className="relative mt-1.5">
-                <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-200/80" />
+                <Lock
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-700"
+                  aria-hidden
+                />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-white/15 bg-white/95 px-3.5 py-2.5 pl-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30"
+                  className="w-full rounded-xl border border-white/15 bg-white/95 py-2.5 pl-10 pr-11 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
                   placeholder="Enter password"
                   autoComplete="current-password"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-brand-700"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </label>
 

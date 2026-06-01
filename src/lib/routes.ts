@@ -5,7 +5,8 @@ export type PageId =
   | 'appointments'
   | 'departments'
   | 'pharmacy'
-  | 'settings';
+  | 'settings'
+  | 'about';
 
 export const PAGE_PATHS: Record<PageId, string> = {
   dashboard: '/dashboard',
@@ -15,6 +16,7 @@ export const PAGE_PATHS: Record<PageId, string> = {
   departments: '/departments',
   pharmacy: '/pharmacy',
   settings: '/settings',
+  about: '/about',
 };
 
 const PATH_TO_PAGE = Object.fromEntries(
