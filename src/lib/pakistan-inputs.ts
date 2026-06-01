@@ -1,3 +1,5 @@
+import { EMPTY_DISPLAY } from './display.js';
+
 export function digitsOnly(value: string): string {
   return value.replace(/\D/g, '');
 }
@@ -88,13 +90,13 @@ export function validateOptionalPhoneOrName(
 }
 
 export function displayCnic(value: string | null | undefined): string {
-  if (!value) return '—';
+  if (!value) return EMPTY_DISPLAY;
   const formatted = formatCnicInput(value);
-  return formatted || '—';
+  return formatted || EMPTY_DISPLAY;
 }
 
 export function displayPakPhone(value: string | null | undefined): string {
-  if (!value) return '—';
+  if (!value) return EMPTY_DISPLAY;
   const formatted = formatPakPhoneInput(value);
-  return formatted || '—';
+  return formatted || EMPTY_DISPLAY;
 }

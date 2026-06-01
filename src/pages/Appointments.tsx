@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Plus } from 'lucide-react';
 import { api, type Appointment, type UpdateAppointment } from '../lib/api';
+import { EMPTY_DISPLAY } from '../lib/display';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirmDelete } from '../hooks/useConfirmDelete';
@@ -190,8 +191,8 @@ export default function Appointments() {
                         {a.patient.patientId}
                       </span>
                     </td>
-                    <td className="px-5 py-4">{a.doctor?.name ?? '—'}</td>
-                    <td className="px-5 py-4">{a.appointmentTime ?? '—'}</td>
+                    <td className="px-5 py-4">{a.doctor?.name ?? EMPTY_DISPLAY}</td>
+                    <td className="px-5 py-4">{a.appointmentTime ?? EMPTY_DISPLAY}</td>
                     <td className="px-5 py-4">
                       <Badge variant={statusVariant[a.status] ?? 'default'}>
                         {a.status}

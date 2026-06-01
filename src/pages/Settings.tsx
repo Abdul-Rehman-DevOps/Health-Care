@@ -279,7 +279,7 @@ function UserAccountsSection() {
       />
 
       <Modal
-        title={`Reset password — ${resetUser?.displayName ?? ''}`}
+        title={`Reset password, ${resetUser?.displayName ?? ''}`}
         open={!!resetUser}
         onClose={closeResetModal}
       >

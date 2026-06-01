@@ -58,7 +58,7 @@ export const optionalPakMobile = (label: string) =>
       message: `${label} must be a valid Pakistani mobile (+92 3XX-XXXXXXX)`,
     });
 
-/** Name or Pakistani mobile — for emergency contact person. */
+/** Name or Pakistani mobile, for emergency contact person. */
 export const optionalPhoneOrName = (label: string) =>
   z
     .string()

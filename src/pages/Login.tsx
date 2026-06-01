@@ -93,7 +93,7 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-md animate-slide-up">
         <div className="mb-8 text-center text-white">
-          <p className="text-5xl font-light tracking-tight tabular-nums">{time || '—:—'}</p>
+          <p className="text-5xl font-light tracking-tight tabular-nums">{time || '--:--'}</p>
           <p className="mt-2 text-sm font-medium text-white/60">{date}</p>
         </div>
 

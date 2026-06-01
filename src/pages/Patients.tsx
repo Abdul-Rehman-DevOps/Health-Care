@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Plus, Search, Users } from 'lucide-react';
 import { api, type NewPatient, type Patient } from '../lib/api';
+import { EMPTY_DISPLAY } from '../lib/display';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirmDelete } from '../hooks/useConfirmDelete';
@@ -171,7 +172,7 @@ export default function Patients() {
                     <td className="font-medium">{p.name}</td>
                     <td className="font-mono text-xs">{displayPakPhone(p.contact)}</td>
                     <td className="truncate" title={p.allergies ?? ''}>
-                      {p.allergies ?? p.notes ?? '—'}
+                      {p.allergies ?? p.notes ?? EMPTY_DISPLAY}
                     </td>
                     <td className="col-actions">
                       <div className="flex flex-wrap justify-end gap-1">
@@ -522,16 +523,16 @@ function inputClass(hasError: boolean, extra = '') {
 function DetailGrid({ patient: p }: { patient: Patient }) {
   const rows: [string, string][] = [
     ['Patient ID', p.patientId],
-    ['Father name', p.fatherName ?? '—'],
-    ['Age', p.age ? `${p.age} years` : '—'],
-    ['Gender', p.gender ?? '—'],
+    ['Father name', p.fatherName ?? EMPTY_DISPLAY],
+    ['Age', p.age ? `${p.age} years` : EMPTY_DISPLAY],
+    ['Gender', p.gender ?? EMPTY_DISPLAY],
     ['CNIC', displayCnic(p.cnic)],
     ['Contact', displayPakPhone(p.contact)],
     ['Emergency', displayPakPhone(p.emergencyContact)],
-    ['Address', p.address ?? '—'],
-    ['Blood group', p.bloodGroup ?? '—'],
-    ['Illness / condition', p.allergies ?? '—'],
-    ['Patient notes', p.notes ?? '—'],
+    ['Address', p.address ?? EMPTY_DISPLAY],
+    ['Blood group', p.bloodGroup ?? EMPTY_DISPLAY],
+    ['Illness / condition', p.allergies ?? EMPTY_DISPLAY],
+    ['Patient notes', p.notes ?? EMPTY_DISPLAY],
   ];
   return (
     <dl className="grid gap-3 sm:grid-cols-2">

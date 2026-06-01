@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
-# Frontend — nginx + Vite build
+# Frontend: nginx + Vite build
 
 FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY server/package.json ./server/
-# Must include optional deps — Rollup needs @rollup/rollup-linux-x64-musl on Alpine
+# Must include optional deps; Rollup needs @rollup/rollup-linux-x64-musl on Alpine
 RUN npm ci --include=dev 2>/dev/null || npm install --include=dev
 RUN npm install @rollup/rollup-linux-x64-musl --no-save
 

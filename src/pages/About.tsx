@@ -28,7 +28,7 @@ export default function About() {
             <h2 className="text-lg font-bold text-slate-900">About this application</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
               A hospital management system for patient records, doctor schedules, appointments,
-              departments, pharmacy inventory, and hospital settings — built for day-to-day
+              departments, pharmacy inventory, and hospital settings, built for day-to-day
               clinical and administrative work.
             </p>
           </div>

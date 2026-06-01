@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, Plus, Search } from 'lucide-react';
 import { api, type Drug, type NewDrug } from '../lib/api';
+import { EMPTY_DISPLAY } from '../lib/display';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirmDelete } from '../hooks/useConfirmDelete';
@@ -163,7 +164,7 @@ export default function Pharmacy() {
                 {data?.map((d) => (
                   <tr key={d.id} className="border-b border-slate-50 hover:bg-slate-50/50">
                     <td className="px-5 py-4 font-medium">{d.name}</td>
-                    <td className="px-5 py-4 text-slate-600">{d.category ?? '—'}</td>
+                    <td className="px-5 py-4 text-slate-600">{d.category ?? EMPTY_DISPLAY}</td>
                     <td className="px-5 py-4">PKR {Number(d.salePrice).toLocaleString()}</td>
                     <td className="px-5 py-4">
                       {d.stockQuantity <= (d.reorderLevel ?? 10) ? (

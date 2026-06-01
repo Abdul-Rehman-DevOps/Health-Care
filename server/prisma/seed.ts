@@ -17,7 +17,7 @@ async function main() {
         displayName: u.displayName,
         role: u.role,
       },
-      // Do not overwrite password on restart — preserves credentials changed in Settings
+      // Do not overwrite password on restart; preserves credentials changed in Settings
       update: {
         displayName: u.displayName,
         role: u.role,

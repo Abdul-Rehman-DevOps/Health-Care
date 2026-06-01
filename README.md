@@ -1,4 +1,4 @@
-# Health Care — Hospital Management System
+# Health Care: Hospital Management System
 
 Enterprise-style web application for hospital operations: patient registration, clinical scheduling, departmental organization, pharmacy inventory, and centralized administration. The stack is containerized for consistent deployment (PostgreSQL, REST API, React SPA behind nginx).
 
@@ -102,7 +102,7 @@ Hospital profile and administration (administrators).
 
 | Section | Capabilities |
 |---------|----------------|
-| **Hospital identity** | Name, tagline — propagated app-wide (login, sidebar, header, browser title, dashboard) |
+| **Hospital identity** | Name, tagline; propagated app-wide (login, sidebar, header, browser title, dashboard) |
 | **Contact & location** | Phone, email, address, city, currency |
 | **User accounts** | List users, create accounts (admin or standard role), reset passwords, delete users (with safeguards) |
 
@@ -160,7 +160,7 @@ Unauthorized API operations return `403 Forbidden`. Restricted controls are omit
 
 ### Initial access (development only)
 
-Bootstrap accounts are created by `server/prisma/seed.ts` for **local and demonstration environments only**. Credentials are defined in that file—not duplicated here.
+Bootstrap accounts are created by `server/prisma/seed.ts` for **local and demonstration environments only**. Credentials are defined in that file, not duplicated here.
 
 **Before any production or shared deployment:**
 
@@ -207,9 +207,9 @@ Emergency contact accepts either a contact name or a phone number (not both mand
 
 ## Branding and configuration
 
-- **Public branding API** (`GET /api/branding`) — hospital name and tagline without authentication (login screen).
-- **Settings API** — full hospital profile; updates invalidate branding cache across the application.
-- **Browser metadata** — dynamic document title; static favicon at `/favicon.svg`.
+- **Public branding API** (`GET /api/branding`): hospital name and tagline without authentication (login screen).
+- **Settings API**: full hospital profile; updates invalidate branding cache across the application.
+- **Browser metadata**: dynamic document title; static favicon at `/favicon.svg`.
 
 Developer attribution appears in the **About** module and in the sidebar below **Sign out** only.
 
@@ -253,7 +253,7 @@ Application URL: **http://localhost:8080**
 
 ```bash
 docker compose down          # stops containers; database volume is kept
-docker compose up -d         # start again — all patients, appointments, etc. remain
+docker compose up -d         # start again; all patients, appointments, etc. remain
 docker compose restart       # quick restart; data unchanged
 ```
 
@@ -288,7 +288,7 @@ Migrations run on API startup (`prisma migrate deploy`) and **only add or alter 
 
 | Command | Effect |
 |---------|--------|
-| `docker compose down -v` | **Removes** volume `health-care_pgdata` — full data loss |
+| `docker compose down -v` | **Removes** volume `health-care_pgdata`; full data loss |
 | `docker volume rm health-care_pgdata` | Same as above |
 | Deleting the volume in Docker Desktop | Same as above |
 
@@ -324,7 +324,7 @@ Manual one-liner:
 docker compose exec -T db pg_dump -U healthcare -d healthcare --no-owner --clean --if-exists > backups/manual-backup.sql
 ```
 
-Restore (advanced — stops writes; test on a copy first):
+Restore (advanced; stops writes, test on a copy first):
 
 ```bash
 docker compose exec -T db psql -U healthcare -d healthcare < backups/your-backup.sql

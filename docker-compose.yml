@@ -1,4 +1,4 @@
-# Health Care — full stack in Docker (DB + API + frontend)
+# Health Care: full stack in Docker (DB + API + frontend)
 # Run: docker compose up --build -d
 # App: http://localhost:8080
 #
