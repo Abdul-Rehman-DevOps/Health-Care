@@ -28,6 +28,7 @@ import { getValidationFields } from '../lib/validation-errors';
 const fieldMeta = {
   hospitalName: { label: 'Hospital name', icon: Building2, required: true },
   tagline: { label: 'Tagline', icon: Quote },
+  logoUrl: { label: 'Prescription logo path', icon: Sparkles },
   contact: { label: 'Contact', icon: Phone },
   email: { label: 'Email', icon: Mail },
   address: { label: 'Address', icon: MapPin },
@@ -38,7 +39,7 @@ const formSections = [
   {
     title: 'Hospital identity',
     subtitle: 'Shown on login, sidebar, and browser tab',
-    fields: ['hospitalName', 'tagline'] as const,
+    fields: ['hospitalName', 'tagline', 'logoUrl'] as const,
   },
   {
     title: 'Contact details',
@@ -437,6 +438,7 @@ export default function Settings() {
       qc.invalidateQueries({ queryKey: ['settings'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['branding'] });
+      qc.invalidateQueries({ queryKey: ['visits'] });
       setFieldErrors({});
       toast('Settings saved successfully');
     },
@@ -566,6 +568,7 @@ export default function Settings() {
                 address: fd.get('address') as string,
                 city: fd.get('city') as string,
                 tagline: fd.get('tagline') as string,
+                logoUrl: (fd.get('logoUrl') as string) || null,
               });
             }}
           >
@@ -579,7 +582,8 @@ export default function Settings() {
                   {section.fields.map((name) => {
                     const meta = fieldMeta[name];
                     const Icon = meta.icon;
-                    const fullWidth = name === 'address' || name === 'tagline';
+                    const fullWidth =
+                      name === 'address' || name === 'tagline' || name === 'logoUrl';
                     return (
                       <label
                         key={name}
@@ -596,7 +600,14 @@ export default function Settings() {
                         </span>
                         <input
                           name={name}
-                          defaultValue={(data[name as keyof typeof data] as string) ?? ''}
+                          placeholder={
+                            name === 'logoUrl' ? '/hospital-logo-brand.png' : undefined
+                          }
+                          defaultValue={
+                            name === 'logoUrl'
+                              ? (data.logoUrl ?? '/hospital-logo-brand.png')
+                              : ((data[name as keyof typeof data] as string) ?? '')
+                          }
                           disabled={!isAdmin}
                           onChange={(e) => {
                             setFieldErrors((prev) => ({ ...prev, [name]: undefined }));

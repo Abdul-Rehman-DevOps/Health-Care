@@ -13,7 +13,7 @@ import { api } from '../lib/api';
 import { useHospitalBranding } from '../context/HospitalBrandingContext';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
-import type { PageId } from '../components/Layout';
+import type { PageId } from '../lib/routes';
 
 type Props = { onNavigate: (p: PageId) => void };
 

@@ -13,6 +13,10 @@ const schema = z.object({
   contact: optionalPakMobile('Contact'),
   email: z.string().optional(),
   fee: z.number().nonnegative().optional(),
+  prescriptionTemplate: z
+    .enum(['full', 'standard', 'minimal', 'banner', 'pediatric'])
+    .optional(),
+  qualificationsExtra: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
@@ -27,6 +31,8 @@ function toCreateData(data: DoctorBody): Prisma.DoctorUncheckedCreateInput {
     contact: normalizePhoneField(data.contact),
     email: data.email,
     fee: data.fee,
+    prescriptionTemplate: data.prescriptionTemplate,
+    qualificationsExtra: data.qualificationsExtra?.trim() || null,
     isActive: data.isActive,
   };
 }
@@ -40,13 +46,22 @@ function toUpdateData(data: Partial<DoctorBody>): Prisma.DoctorUncheckedUpdateIn
   if (data.contact !== undefined) out.contact = normalizePhoneField(data.contact);
   if (data.email !== undefined) out.email = data.email;
   if (data.fee !== undefined) out.fee = data.fee;
+  if (data.prescriptionTemplate !== undefined) {
+    out.prescriptionTemplate = data.prescriptionTemplate;
+  }
+  if (data.qualificationsExtra !== undefined) {
+    out.qualificationsExtra = data.qualificationsExtra?.trim() || null;
+  }
   if (data.isActive !== undefined) out.isActive = data.isActive;
   return out;
 }
 
 export const doctorRoutes: FastifyPluginAsync = async (app) => {
-  app.get('/', async () => {
+  app.get('/', async (req) => {
+    const q = req.query as { all?: string };
+    const where = q.all === '1' ? {} : { isActive: true };
     return prisma.doctor.findMany({
+      where,
       include: { department: { select: { name: true, code: true } } },
       orderBy: { name: 'asc' },
     });

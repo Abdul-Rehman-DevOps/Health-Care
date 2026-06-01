@@ -83,6 +83,7 @@ export default function Patients() {
       api.patients.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['patients'] });
+      qc.invalidateQueries({ queryKey: ['visits'] });
       setEditId(null);
       setForm(emptyForm);
       toast('Patient updated');

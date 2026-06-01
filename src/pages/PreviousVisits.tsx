@@ -140,6 +140,18 @@ export default function PreviousVisits() {
 
   const print = useVisitPrint();
 
+  const markPaid = useMutation({
+    mutationFn: api.visits.markPaid,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['visits'] });
+      if (detailId) {
+        qc.invalidateQueries({ queryKey: ['visits', detailId] });
+      }
+      toast('Bill marked as paid');
+    },
+    onError: (e: Error) => toast(e.message, 'error'),
+  });
+
   const removeVisit = useMutation({
     mutationFn: api.visits.delete,
     onSuccess: () => {
@@ -354,6 +366,16 @@ export default function PreviousVisits() {
           <div className="space-y-4">
             <VisitDetailBody visit={detailVisit} />
             <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+              {detailVisit.bill && !detailVisit.bill.isPaid && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={markPaid.isPending}
+                  onClick={() => markPaid.mutate(detailVisit.id)}
+                >
+                  Mark bill paid
+                </button>
+              )}
               <button
                 type="button"
                 className="btn-secondary"
@@ -390,13 +412,8 @@ export default function PreviousVisits() {
         onClose={print.closePrint}
         onModeChange={print.setPrintMode}
         onPrint={print.printNow}
+        printing={print.loading}
       />
-
-      {print.loading && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/20 backdrop-blur-sm">
-          <LoadingSpinner label="Preparing print…" />
-        </div>
-      )}
 
       <ConfirmDialog
         open={!!confirmDelete.pending}

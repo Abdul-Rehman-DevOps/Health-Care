@@ -9,6 +9,11 @@ import {
   requiredPakMobile,
 } from '../lib/pakistan-inputs.js';
 import { sendValidationError } from '../lib/validation.js';
+import {
+  pakistanDayRange,
+  pakistanDayStart,
+  pakistanDayEndExclusive,
+} from '../lib/pakistan-time.js';
 
 const lineSchema = z.object({
   lineType: z.enum(['drug', 'lab', 'custom']),
@@ -104,18 +109,13 @@ export const visitRoutes: FastifyPluginAsync = async (app) => {
     if (q.patientId) where.patientId = q.patientId;
 
     if (q.date) {
-      const day = new Date(q.date);
-      const next = new Date(day);
-      next.setDate(next.getDate() + 1);
-      visitDateFilter = { gte: day, lt: next };
+      visitDateFilter = pakistanDayRange(q.date);
     } else {
       if (q.from) {
-        visitDateFilter = { ...visitDateFilter, gte: new Date(q.from) };
+        visitDateFilter = { ...visitDateFilter, gte: pakistanDayStart(q.from) };
       }
       if (q.to) {
-        const end = new Date(q.to);
-        end.setDate(end.getDate() + 1);
-        visitDateFilter = { ...visitDateFilter, lt: end };
+        visitDateFilter = { ...visitDateFilter, lt: pakistanDayEndExclusive(q.to) };
       }
     }
     if (visitDateFilter) where.visitDate = visitDateFilter;
@@ -236,7 +236,31 @@ export const visitRoutes: FastifyPluginAsync = async (app) => {
     const visitNumber = await nextCounterValue('visit', 'V-');
     const billNumber = await nextCounterValue('bill', 'B-');
 
-    const visit = await prisma.$transaction(async (tx) => {
+    let visit;
+    try {
+      visit = await prisma.$transaction(async (tx) => {
+      for (const l of linesWithAmount) {
+        if (l.lineType === 'drug' && l.drugId) {
+          const drug = await tx.drug.findUnique({ where: { id: l.drugId } });
+          if (!drug) {
+            const err = new Error(`Medicine not found: ${l.name}`) as Error & {
+              statusCode: number;
+              fields: Record<string, string>;
+            };
+            err.statusCode = 400;
+            err.fields = { lines: l.name };
+            throw err;
+          }
+          if (drug.stockQuantity < l.quantity) {
+            const err = new Error(
+              `Insufficient stock for ${l.name}. Available: ${drug.stockQuantity}, requested: ${l.quantity}`
+            ) as Error & { statusCode: number; fields: Record<string, string> };
+            err.statusCode = 400;
+            err.fields = { lines: l.name };
+            throw err;
+          }
+        }
+      }
       const created = await tx.visit.create({
         data: {
           visitNumber,
@@ -277,15 +301,34 @@ export const visitRoutes: FastifyPluginAsync = async (app) => {
 
       for (const l of linesWithAmount) {
         if (l.lineType === 'drug' && l.drugId) {
-          await tx.drug.updateMany({
+          const updated = await tx.drug.updateMany({
             where: { id: l.drugId, stockQuantity: { gte: l.quantity } },
             data: { stockQuantity: { decrement: l.quantity } },
           });
+          if (updated.count === 0) {
+            const err = new Error(`Insufficient stock for ${l.name}`) as Error & {
+              statusCode: number;
+              fields: Record<string, string>;
+            };
+            err.statusCode = 400;
+            err.fields = { lines: l.name };
+            throw err;
+          }
         }
       }
 
       return created;
-    });
+      });
+    } catch (e) {
+      const err = e as Error & { statusCode?: number; fields?: Record<string, string> };
+      if (err.statusCode === 400) {
+        return reply.code(400).send({
+          error: err.message,
+          fields: err.fields,
+        });
+      }
+      throw e;
+    }
 
     const full = await loadVisit(visit.id);
     return reply.code(201).send(mapVisit(full));
@@ -293,9 +336,24 @@ export const visitRoutes: FastifyPluginAsync = async (app) => {
 
   app.delete('/:id', async (req, reply) => {
     const { id } = req.params as { id: string };
-    const existing = await prisma.visit.findUnique({ where: { id } });
+    const existing = await prisma.visit.findUnique({
+      where: { id },
+      include: { lines: true },
+    });
     if (!existing) return reply.code(404).send({ error: 'Visit not found' });
-    await prisma.visit.delete({ where: { id } });
+
+    await prisma.$transaction(async (tx) => {
+      for (const line of existing.lines) {
+        if (line.lineType === 'drug' && line.drugId) {
+          await tx.drug.update({
+            where: { id: line.drugId },
+            data: { stockQuantity: { increment: line.quantity } },
+          });
+        }
+      }
+      await tx.visit.delete({ where: { id } });
+    });
+
     return { ok: true };
   });
 

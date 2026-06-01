@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 72" role="img" aria-label="LifeCare Hospital">
+  <defs>
+    <linearGradient id="lcHeart" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#dc2626"/>
+      <stop offset="45%" stop-color="#b91c1c"/>
+      <stop offset="100%" stop-color="#7f1d1d"/>
+    </linearGradient>
+  </defs>
+  <!-- Maroon heart with hands + white cross -->
+  <g transform="translate(2, 4)">
+    <path
+      fill="url(#lcHeart)"
+      d="M38 8
+         C22 8 10 22 8 36
+         C6 48 12 58 22 64
+         L38 72
+         L38 8 Z"
+    />
+    <path
+      fill="url(#lcHeart)"
+      d="M38 8
+         C48 8 56 12 62 20
+         C70 30 72 44 66 54
+         L38 72
+         L38 8 Z"
+    />
+    <circle cx="50" cy="14" r="5.5" fill="url(#lcHeart)"/>
+    <rect x="32" y="34" width="12" height="22" rx="0.5" fill="#ffffff"/>
+    <rect x="26" y="40" width="24" height="10" rx="0.5" fill="#ffffff"/>
+  </g>
+  <!-- LifeCare Hospital wordmark -->
+  <text
+    x="82"
+    y="38"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="28"
+    font-weight="700"
+    font-style="italic"
+    fill="#1e3a8a"
+  >
+    LifeCare
+  </text>
+  <line x1="82" y1="44" x2="210" y2="44" stroke="#2563eb" stroke-width="1"/>
+  <text
+    x="146"
+    y="58"
+    text-anchor="middle"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="10"
+    font-weight="600"
+    letter-spacing="0.28em"
+    fill="#1d4ed8"
+  >
+    HOSPITAL
+  </text>
+  <line x1="82" y1="63" x2="210" y2="63" stroke="#2563eb" stroke-width="1"/>
+</svg>

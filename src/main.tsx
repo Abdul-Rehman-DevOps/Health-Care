@@ -6,6 +6,7 @@ import { HospitalBrandingProvider } from './context/HospitalBrandingContext';
 import { ToastProvider } from './context/ToastContext';
 import App from './App';
 import './index.css';
+import './styles/lc-prescription-pad.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

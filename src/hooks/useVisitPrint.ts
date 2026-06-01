@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { api, type VisitDetail } from '../lib/api';
 import { printElementByIframe } from '../lib/print-document';
 import { buildPrintFilename } from '../lib/print-filename';
@@ -7,12 +8,15 @@ export type PrintMode = 'prescription' | 'bill' | 'both';
 
 export function useVisitPrint() {
   const [savedVisit, setSavedVisit] = useState<VisitDetail | null>(null);
-  const [printMode, setPrintMode] = useState<PrintMode>('both');
+  const [printMode, setPrintMode] = useState<PrintMode>('prescription');
   const [printOpen, setPrintOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const titleBeforePrintRef = useRef<string | null>(null);
 
-  async function openVisitPrint(visitId: string, mode: PrintMode = 'both') {
+  function closePrint() {
+    setPrintOpen(false);
+  }
+
+  async function openVisitPrint(visitId: string, mode: PrintMode = 'prescription') {
     setLoading(true);
     try {
       const visit = await api.visits.get(visitId);
@@ -24,38 +28,59 @@ export function useVisitPrint() {
     }
   }
 
-  function showVisit(visit: VisitDetail, mode: PrintMode = 'both') {
+  function showVisit(visit: VisitDetail, mode: PrintMode = 'prescription') {
     setSavedVisit(visit);
     setPrintMode(mode);
     setPrintOpen(true);
   }
 
-  function closePrint() {
+  /** Keep last visit for sidebar reprint buttons without opening the modal. */
+  function rememberVisit(visit: VisitDetail) {
+    setSavedVisit(visit);
     setPrintOpen(false);
   }
 
-  function printNow() {
-    if (!savedVisit) return;
+  async function executePrint(visit: VisitDetail, mode: PrintMode, onDone?: () => void) {
+    setLoading(true);
+    let fresh = visit;
+    try {
+      fresh = await api.visits.get(visit.id);
+    } catch {
+      /* use provided visit */
+    } finally {
+      setLoading(false);
+    }
 
-    const filename = buildPrintFilename(
-      savedVisit.patient.name,
-      savedVisit.visitNumber
+    flushSync(() => {
+      setSavedVisit(fresh);
+      setPrintMode(mode);
+    });
+
+    await new Promise<void>((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r()))
     );
 
-    titleBeforePrintRef.current = document.title;
-    document.title = filename;
+    const filename = buildPrintFilename(fresh.patient.name, fresh.visitNumber);
+    const previousTitle = document.title;
 
-    const restoreTitle = () => {
-      if (titleBeforePrintRef.current != null) {
-        document.title = titleBeforePrintRef.current;
-        titleBeforePrintRef.current = null;
-      }
-    };
+    await new Promise<void>((resolve) => {
+      printElementByIframe('#health-care-print-root', filename, () => {
+        document.title = previousTitle;
+        onDone?.();
+        resolve();
+      });
+    });
+  }
 
-    printElementByIframe('#health-care-print-root', filename);
+  async function printNow() {
+    if (!savedVisit) return;
+    await executePrint(savedVisit, printMode, closePrint);
+  }
 
-    // Iframe handles print; restore main tab title shortly after dialog opens
-    setTimeout(restoreTitle, 500);
+  /** After save: open print dialog once, then close (no preview modal). */
+  async function autoPrintVisit(visit: VisitDetail, mode: PrintMode = 'prescription') {
+    setPrintOpen(false);
+    await executePrint(visit, mode, closePrint);
   }
 
   return {
@@ -66,7 +91,9 @@ export function useVisitPrint() {
     loading,
     openVisitPrint,
     showVisit,
+    rememberVisit,
     closePrint,
     printNow,
+    autoPrintVisit,
   };
 }

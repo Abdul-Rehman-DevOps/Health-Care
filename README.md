@@ -74,9 +74,19 @@ End-to-end outpatient desk workflow aligned with clinic practice:
 - **Medicines**: searchable pharmacy picker; custom medicine name and dosage
 - **Lab tests**: searchable lab catalog picker; custom lab test name and price (not in catalog)
 - **Billing**: consultation fee, line items, discount, paid/unpaid flag; visit numbers `V-*`, bills `B-*`
-- **Save & print**: professional A5 prescription and bill (see [Printing](#printing))
+- **Save & print**: LifeCare-style full-page A5 prescription (per doctor) and bill (see [Printing](#printing))
+- **Pharmacy stock**: medicines picked from stock reduce inventory automatically when the visit is saved
 - **History**: per-patient visit modal with reprint
 - **Today’s visits**: sidebar list for quick reprint
+
+### Blank pads (inside OPD)
+
+On **OPD & Prescription**, after selecting a consulting doctor:
+
+- **Blank prescription** — download/print empty pad with that doctor’s header and layout
+- **Blank bill** — download/print empty bill with hospital logo and footer
+
+Filled visits use the same LifeCare-style templates for prescription and bill (A5, one page each).
 
 ### Previous visits
 
@@ -117,7 +127,7 @@ Full patient lifecycle with search and pagination.
 
 ### Doctors
 
-Physician directory linked to departments: qualifications, specialization, consultation fee, contact details, active status. Create, update, and delete restricted to administrators; standard users have read-only access.
+Physician directory linked to departments: qualifications (primary + extra lines), specialization, **prescription pad style** (`full`, `standard`, `minimal`, `banner`), consultation fee, contact. Create, update, and delete restricted to administrators.
 
 ### Appointments
 

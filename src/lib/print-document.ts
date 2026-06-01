@@ -3,10 +3,44 @@
  * - document.title becomes the default PDF file name (patient_visitNo)
  * - the printed footer URL is blank (not the app / ngrok URL)
  */
-export function printElementByIframe(selector: string, documentTitle: string): void {
+import { resolvePublicUrl } from './hospital-logo';
+
+function absolutizeImages(root: ParentNode): void {
+  root.querySelectorAll('img[src]').forEach((img) => {
+    const el = img as HTMLImageElement;
+    const src = el.getAttribute('src');
+    if (!src || /^https?:\/\//i.test(src) || src.startsWith('data:')) return;
+    el.src = resolvePublicUrl(src);
+  });
+}
+
+function waitForImages(doc: Document): Promise<void> {
+  const imgs = Array.from(doc.querySelectorAll('img'));
+  if (imgs.length === 0) return Promise.resolve();
+  return Promise.all(
+    imgs.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) {
+            resolve();
+            return;
+          }
+          img.addEventListener('load', () => resolve(), { once: true });
+          img.addEventListener('error', () => resolve(), { once: true });
+        })
+    )
+  ).then(() => undefined);
+}
+
+export function printElementByIframe(
+  selector: string,
+  documentTitle: string,
+  onFinished?: () => void
+): void {
   const source = document.querySelector(selector);
   if (!source) {
     window.print();
+    onFinished?.();
     return;
   }
 
@@ -20,7 +54,7 @@ export function printElementByIframe(selector: string, documentTitle: string): v
   const doc = iframe.contentDocument;
   if (!win || !doc) {
     iframe.remove();
-    window.print();
+    onFinished?.();
     return;
   }
 
@@ -29,94 +63,68 @@ export function printElementByIframe(selector: string, documentTitle: string): v
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
+  const baseHref = `${window.location.origin}${import.meta.env.BASE_URL || '/'}`;
   doc.open();
   doc.write(
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapedTitle}</title></head><body></body></html>`
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${baseHref}"><title>${escapedTitle}</title></head><body></body></html>`
   );
   doc.close();
 
   document.querySelectorAll('link[rel="stylesheet"]').forEach((node) => {
-    doc.head.appendChild(node.cloneNode(true));
+    const link = node.cloneNode(true) as HTMLLinkElement;
+    if (link.href && !/^https?:\/\//i.test(link.getAttribute('href') || '')) {
+      link.href = resolvePublicUrl(link.getAttribute('href') || link.href);
+    }
+    doc.head.appendChild(link);
   });
   document.querySelectorAll('style').forEach((node) => {
     doc.head.appendChild(node.cloneNode(true));
   });
 
-  const pageStyle = doc.createElement('style');
-  pageStyle.textContent = `
-    @page {
-      size: A5 portrait;
-      margin: 6mm;
-    }
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #fff;
-    }
-    @media print {
-      @page {
-        size: A5 portrait;
-        margin: 6mm;
-      }
-      .hc-print-page {
-        display: flex;
-        flex-direction: column;
-        height: 198mm;
-        max-height: 198mm;
-        min-height: 198mm;
-        overflow: hidden;
-        page-break-inside: avoid;
-        break-inside: avoid-page;
-      }
-      .hc-print-page--with-next {
-        page-break-after: always;
-        break-after: page;
-      }
-      .hc-print-page-break {
-        page-break-before: always;
-        break-before: page;
-      }
-      .hc-print-page-body {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: hidden;
-      }
-      .hc-print-footer,
-      .hc-print-bill-footer {
-        margin-top: auto;
-        flex-shrink: 0;
-      }
-    }
-  `;
-  doc.head.appendChild(pageStyle);
-
   const wrapper = doc.createElement('div');
   wrapper.innerHTML = source.innerHTML;
+  absolutizeImages(wrapper);
   doc.body.appendChild(wrapper);
 
-  const cleanup = () => {
-    win.removeEventListener('afterprint', cleanup);
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    win.removeEventListener('afterprint', finish);
     setTimeout(() => iframe.remove(), 200);
+    onFinished?.();
   };
 
-  const doPrint = () => {
+  let printed = false;
+  const doPrint = async () => {
+    if (printed) return;
+    printed = true;
+    absolutizeImages(doc);
+    await waitForImages(doc);
     doc.title = documentTitle;
     win.focus();
     win.print();
-    win.addEventListener('afterprint', cleanup);
-    setTimeout(cleanup, 120_000);
+    win.addEventListener('afterprint', finish);
+    setTimeout(finish, 120_000);
   };
 
   const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'));
+  let started = false;
+  const startOnce = () => {
+    if (started) return;
+    started = true;
+    requestAnimationFrame(() => void doPrint());
+  };
+
   if (links.length === 0) {
-    requestAnimationFrame(doPrint);
+    startOnce();
     return;
   }
 
   let pending = links.length;
   const onSheetDone = () => {
     pending -= 1;
-    if (pending <= 0) requestAnimationFrame(doPrint);
+    if (pending <= 0) startOnce();
   };
 
   links.forEach((link) => {
@@ -124,5 +132,7 @@ export function printElementByIframe(selector: string, documentTitle: string): v
     link.addEventListener('error', onSheetDone);
   });
 
-  setTimeout(() => requestAnimationFrame(doPrint), 2000);
+  setTimeout(() => {
+    if (!started) startOnce();
+  }, 2500);
 }

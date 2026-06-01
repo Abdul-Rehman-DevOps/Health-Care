@@ -1,0 +1,564 @@
+/* LifeCare prescription & bill — A5 single page */
+
+.lc-print-preview .hc-print-document {
+  transform-origin: top center;
+  transform: scale(0.9);
+}
+
+.lc-print-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 148mm;
+  min-height: 188mm;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: #fff;
+  color: #0f172a;
+  font-family: Inter, 'Segoe UI', Arial, sans-serif;
+  font-size: 8.5pt;
+  line-height: 1.35;
+}
+
+.lc-print-sheet__watermark {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  width: 55%;
+  max-width: 75mm;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lc-print-sheet__watermark img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.lc-print-sheet > *:not(.lc-print-sheet__watermark) {
+  position: relative;
+  z-index: 1;
+}
+
+/* —— Header —— */
+.lc-pad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8pt;
+  flex-shrink: 0;
+  padding-bottom: 6pt;
+  margin-bottom: 4pt;
+  border-bottom: 1.5pt solid #0f172a;
+}
+
+.lc-pad-logo-block {
+  flex: 0 0 auto;
+  width: 28mm;
+  max-width: 32%;
+}
+
+.lc-pad-logo-img {
+  display: block;
+  height: 22mm;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left top;
+}
+
+.lc-pad-logo-img--brand {
+  height: 24mm;
+  max-width: 48mm;
+}
+
+.lc-pad-logo-block--brand {
+  width: auto;
+  max-width: 48%;
+}
+
+.lc-pad-doctor {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+.lc-pad-doctor-name {
+  margin: 0;
+  font-size: 11pt;
+  font-weight: 800;
+  color: #1e3a5f;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.lc-pad-doctor-spec {
+  margin: 2pt 0 0;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.lc-pad-doctor-quals {
+  margin: 2pt 0 0;
+  font-size: 7.5pt;
+  color: #334155;
+  line-height: 1.35;
+}
+
+.lc-pad-doctor-quals p {
+  margin: 0 0 1pt;
+}
+
+.lc-pad-doctor-contact {
+  margin: 3pt 0 0;
+  font-size: 7pt;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.35;
+}
+
+/* Banner / general pad (Dr. Komal Usman) — LifeCare brand logo + doctor */
+.lc-pad-header--banner {
+  border-bottom: 1.5pt solid #0f172a;
+  padding-bottom: 6pt;
+  margin-bottom: 4pt;
+}
+
+.lc-pad-banner-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10pt;
+  width: 100%;
+}
+
+.lc-pad--banner .lc-pad-doctor {
+  flex: 1;
+  max-width: 58%;
+}
+
+/* —— Patient / vitals meta —— */
+.lc-print-sheet__meta {
+  flex-shrink: 0;
+}
+
+.lc-pad-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4pt 12pt;
+  padding: 3pt 0;
+  border-bottom: 0.75pt solid #cbd5e1;
+}
+
+.lc-pad-field {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3pt;
+}
+
+.lc-pad-field-label {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lc-pad-field-value {
+  font-weight: 600;
+  border-bottom: 0.75pt solid #64748b;
+  min-width: 24pt;
+  padding: 0 2pt 1pt;
+}
+
+.lc-pad-field-value.is-blank {
+  min-width: 40pt;
+  color: transparent;
+}
+
+.lc-pad--standard .lc-print-sheet__meta,
+.lc-pad--full .lc-print-sheet__meta,
+.lc-pad--pediatric .lc-print-sheet__meta {
+  border-bottom: 1.5pt solid #2563eb;
+  margin-bottom: 4pt;
+  padding-bottom: 2pt;
+}
+
+.lc-pad--banner .lc-print-sheet__meta {
+  border-bottom: 2pt solid #dc2626;
+  margin-bottom: 4pt;
+  padding-bottom: 2pt;
+}
+
+.lc-pad-row--hx-banner {
+  border-bottom: none;
+  padding-top: 4pt;
+}
+
+.lc-pad-hx-line {
+  flex: 1;
+  min-width: 60%;
+  border-bottom: 0.75pt dotted #94a3b8;
+  min-height: 10pt;
+}
+
+/* —— Body: sidebar + Rx —— */
+.lc-print-sheet__body {
+  flex: 1 1 auto;
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  min-height: 95mm;
+  margin-top: 2pt;
+  border-collapse: collapse;
+}
+
+.lc-pad-sidebar {
+  display: table-cell;
+  width: 30%;
+  vertical-align: top;
+  border-right: 1.5pt solid #2563eb;
+  padding: 4pt 8pt 0 0;
+  font-size: 8pt;
+}
+
+.lc-pad-sidebar-label {
+  display: block;
+  margin: 0 0 8pt;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.lc-pad-sidebar-label::after {
+  content: '';
+  display: block;
+  border-bottom: 0.75pt dotted #94a3b8;
+  margin-top: 12pt;
+  min-height: 1em;
+}
+
+.lc-pad-sidebar-label.has-value::after {
+  content: attr(data-value);
+  border-bottom: none;
+  margin-top: 3pt;
+  font-weight: 500;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lc-pad--standard .lc-pad-sidebar-label::after {
+  margin-top: 18pt;
+  min-height: 2.5em;
+}
+
+.lc-pad-main {
+  display: table-cell;
+  vertical-align: top;
+  padding: 2pt 0 0 10pt;
+}
+
+.lc-pad-main-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 90mm;
+}
+
+.lc-pad--banner .lc-print-sheet__body {
+  display: block;
+}
+
+.lc-pad--banner .lc-pad-main {
+  display: block;
+  width: 100%;
+  padding-left: 0;
+}
+
+/* Dr. Memoona — simple gynecology pad */
+.lc-pad--minimal .lc-print-sheet__meta {
+  border-bottom: 1.5pt solid #0f172a;
+  margin-bottom: 0;
+  padding-bottom: 4pt;
+}
+
+.lc-pad-minimal-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 115mm;
+  margin-top: 4pt;
+}
+
+.lc-pad--minimal .lc-pad-signature {
+  margin-top: auto;
+  padding-top: 12pt;
+}
+
+.lc-pad-diagnosis {
+  display: flex;
+  align-items: flex-end;
+  gap: 4pt;
+  margin-bottom: 6pt;
+}
+
+.lc-pad-delta {
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 12pt;
+  flex-shrink: 0;
+}
+
+.lc-pad-diagnosis-line {
+  flex: 1;
+  border-bottom: 2pt solid #dc2626;
+  min-height: 11pt;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.lc-pad-rx-head {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: 24pt;
+  font-weight: 700;
+  font-style: italic;
+  color: #1d4ed8;
+  line-height: 1;
+  margin: 0 0 6pt;
+}
+
+.lc-pad-rx-blank {
+  flex: 1 1 auto;
+  min-height: 28mm;
+}
+
+.lc-pad-rx-list {
+  margin: 0 0 4pt;
+  padding: 0 0 0 12pt;
+  list-style: disc;
+}
+
+.lc-pad-rx-list li {
+  margin: 2pt 0;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.lc-pad-lab-list {
+  margin: 0 0 4pt;
+  padding: 0 0 0 14pt;
+  list-style: decimal;
+  font-size: 8pt;
+}
+
+.lc-pad-advice {
+  margin-top: 4pt;
+  font-size: 8.5pt;
+}
+
+.lc-pad-advice strong {
+  color: #1d4ed8;
+}
+
+.lc-pad-advice p,
+.lc-pad-advice-blank {
+  margin: 3pt 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lc-pad-advice-blank {
+  min-height: 16mm;
+}
+
+.lc-pad-signature {
+  margin-top: auto;
+  padding-top: 10pt;
+  text-align: right;
+  font-size: 8.5pt;
+}
+
+.lc-pad-signature-line {
+  display: inline-block;
+  min-width: 110pt;
+  border-bottom: 1pt solid #334155;
+  margin-left: 4pt;
+}
+
+/* —— Footer —— */
+.lc-print-sheet__footer.lc-pad-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4pt;
+  margin-top: auto;
+  padding-top: 5pt;
+  border-top: 1pt solid #cbd5e1;
+  font-size: 7pt;
+  color: #334155;
+}
+
+.lc-pad-footer-item {
+  flex: 1 1 30%;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.lc-pad-footer-icon {
+  color: #dc2626;
+}
+
+/* —— Bill —— */
+.lc-pad--bill.lc-print-sheet {
+  min-height: 188mm;
+}
+
+.lc-pad--bill .lc-pad-header--bill {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6pt;
+  border-bottom: 1.5pt solid #334155;
+  padding-bottom: 6pt;
+  margin-bottom: 6pt;
+}
+
+.lc-pad-bill-title-block {
+  flex: 1;
+  text-align: right;
+}
+
+.lc-pad-bill-heading {
+  margin: 0;
+  font-size: 10pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #334155;
+}
+
+.lc-pad-bill-meta {
+  margin: 3pt 0 0;
+  font-size: 8pt;
+  color: #475569;
+}
+
+.lc-pad-row--bill {
+  margin-bottom: 6pt;
+}
+
+.lc-pad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+
+.lc-pad-table thead {
+  background: #334155;
+  color: #fff;
+}
+
+.lc-pad-table th,
+.lc-pad-table td {
+  padding: 4pt 5pt;
+  border-bottom: 0.75pt solid #e2e8f0;
+  text-align: left;
+}
+
+.lc-pad-td-right {
+  text-align: right;
+}
+
+.lc-pad-bill-total td {
+  font-weight: 800;
+  background: #f1f5f9;
+  border-top: 2pt solid #0f172a;
+}
+
+.lc-pad-paid-badge {
+  margin: 8pt auto;
+  padding: 4pt 14pt;
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: center;
+  border-radius: 3pt;
+}
+
+.lc-pad-paid-badge.is-paid {
+  background: #dcfce7;
+  color: #166534;
+  border: 2pt solid #22c55e;
+}
+
+.lc-pad-paid-badge.is-unpaid {
+  background: #fef3c7;
+  color: #92400e;
+  border: 2pt solid #f59e0b;
+}
+
+.lc-pad-bill-thanks {
+  text-align: center;
+  font-size: 8.5pt;
+  color: #64748b;
+  font-style: italic;
+  margin: 4pt 0;
+}
+
+.lc-pad-blank-line {
+  display: inline-block;
+  min-width: 48pt;
+  border-bottom: 0.75pt solid #94a3b8;
+}
+
+.lc-pad-blank-line--short {
+  min-width: 28pt;
+}
+
+.lc-pad-blank-line--amount {
+  display: inline-block;
+  min-width: 52pt;
+  border-bottom: 0.75pt solid #64748b;
+}
+
+.lc-pad-bill-empty-row td {
+  height: 14pt;
+}
+
+.lc-pad-paid-badge--blank {
+  opacity: 0.85;
+  font-size: 9pt;
+}
+
+.lc-pad--bill .lc-pad-table tfoot td {
+  font-weight: 700;
+}
+
+@media print {
+  .lc-print-sheet {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 188mm !important;
+    max-height: 188mm !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  .lc-print-sheet__body {
+    page-break-inside: avoid;
+  }
+
+  .lc-pad-header,
+  .lc-print-sheet__meta,
+  .lc-print-sheet__footer {
+    page-break-inside: avoid;
+  }
+
+  .lc-pad-logo-img,
+  .lc-print-sheet__watermark img {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

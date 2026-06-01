@@ -3,6 +3,10 @@ import { hashPassword } from './lib/password.js';
 
 const prisma = new PrismaClient();
 
+/** LifeCare Hospital contact (prescription pad footer) */
+const CLINIC_PHONE = '30011777479';
+const CLINIC_EMAIL = 'lifecarehospital.islamabad@gmail.com';
+
 async function main() {
   const users = [
     { username: 'admin', password: 'admin', displayName: 'Administrator', role: 'admin' },
@@ -36,14 +40,42 @@ async function main() {
   if (!settings) {
     await prisma.hospitalSettings.create({
       data: {
-        hospitalName: 'Health Care',
-        contact: '03000000000',
-        email: 'info@healthcare.local',
-        address: 'Main Street',
+        hospitalName: 'LifeCare Hospital',
+        contact: CLINIC_PHONE,
+        email: CLINIC_EMAIL,
+        address: 'H#12, Abbasi Rd, Bani Gala',
         city: 'Islamabad',
         tagline: 'Caring for Life',
         currency: 'PKR',
+        logoUrl: '/hospital-logo-brand.png',
       },
+    });
+  } else if (process.env.SEED_FORCE === '1') {
+    await prisma.hospitalSettings.update({
+      where: { id: settings.id },
+      data: {
+        hospitalName: settings.hospitalName || 'LifeCare Hospital',
+        contact: settings.contact || CLINIC_PHONE,
+        email: settings.email || CLINIC_EMAIL,
+        address: settings.address || 'H#12, Abbasi Rd, Bani Gala',
+        city: settings.city || 'Islamabad',
+        logoUrl:
+          !settings.logoUrl ||
+          settings.logoUrl === '/hospital-logo.svg' ||
+          settings.logoUrl === '/hospital-logo-icon.svg' ||
+          settings.logoUrl === '/hospital-logo.png'
+            ? '/hospital-logo-brand.png'
+            : settings.logoUrl,
+      },
+    });
+  } else if (
+    !settings.logoUrl ||
+    settings.logoUrl === '/hospital-logo.svg' ||
+    settings.logoUrl === '/hospital-logo-icon.svg'
+  ) {
+    await prisma.hospitalSettings.update({
+      where: { id: settings.id },
+      data: { logoUrl: '/hospital-logo.png' },
     });
   }
 
@@ -65,25 +97,112 @@ async function main() {
     gopdId = gopd?.id;
   }
 
-  const doctorCount = await prisma.doctor.count();
-  if (doctorCount === 0) {
-    await prisma.doctor.createMany({
-      data: [
-        {
-          name: 'Dr. Sarah Ahmed',
-          specialization: 'General Physician',
-          departmentId: gopdId,
-          fee: 1500,
-          contact: '03001234567',
-        },
-        {
-          name: 'Dr. Ali Khan',
-          specialization: 'Paediatrician',
-          fee: 2000,
-          contact: '03007654321',
-        },
-      ],
+  const gyn = await prisma.department.findFirst({ where: { code: 'GYN' } });
+  const ped = await prisma.department.findFirst({ where: { code: 'PED' } });
+
+  const lifecareDoctors = [
+    {
+      name: 'Dr. Waqas Ahmad Satti',
+      specialization: 'Neurologist / Diabetologist',
+      qualification: 'MBBS, MD (Neurology)',
+      qualificationsExtra: 'Diploma in Diabetes and Weight Management',
+      prescriptionTemplate: 'full',
+      departmentId: gopdId,
+      fee: 2500,
+      contact: CLINIC_PHONE,
+      email: CLINIC_EMAIL,
+    },
+    {
+      name: 'Dr. Muhammad Usman',
+      specialization: 'General Physician / Sr. Medical Officer',
+      qualification: 'BSc, MBBS, RMP',
+      qualificationsExtra: null,
+      prescriptionTemplate: 'standard',
+      departmentId: gopdId,
+      fee: 1500,
+      contact: CLINIC_PHONE,
+      email: CLINIC_EMAIL,
+    },
+    {
+      name: 'Dr. Memoona Munawar',
+      specialization: 'Consultant Obstetrician & Gynecologist',
+      qualification: 'MBBS, FCPS GYNAE & OBS, CHPE',
+      qualificationsExtra:
+        'Certified in Diagnostic Ultrasound IIS\nMaster Trainer in Lactation Management (UNICEF)\nDiploma in Gynecological Laparoscopic Surgery, UKSH Germany',
+      prescriptionTemplate: 'minimal',
+      departmentId: gyn?.id,
+      fee: 3500,
+      contact: CLINIC_PHONE,
+      email: CLINIC_EMAIL,
+    },
+    {
+      name: 'Dr. Ammara Tanweer',
+      specialization: 'Child Specialist',
+      qualification: 'MBBS, FCPS (Paeds & Neonatology)',
+      qualificationsExtra: null,
+      prescriptionTemplate: 'pediatric',
+      departmentId: ped?.id,
+      fee: 2000,
+      contact: CLINIC_PHONE,
+      email: CLINIC_EMAIL,
+    },
+    {
+      name: 'Dr. Komal Usman',
+      specialization: 'General Medicine',
+      qualification: 'MBBS',
+      qualificationsExtra: null,
+      prescriptionTemplate: 'banner',
+      departmentId: gopdId,
+      fee: 1200,
+      contact: CLINIC_PHONE,
+      email: CLINIC_EMAIL,
+    },
+  ];
+
+  const komalExisting = await prisma.doctor.findFirst({
+    where: { name: { contains: 'Komal Usman', mode: 'insensitive' } },
+  });
+  if (komalExisting && komalExisting.prescriptionTemplate !== 'banner') {
+    await prisma.doctor.update({
+      where: { id: komalExisting.id },
+      data: { prescriptionTemplate: 'banner' },
     });
+  }
+
+  const memoonaExisting = await prisma.doctor.findFirst({
+    where: { name: { contains: 'Memoona', mode: 'insensitive' } },
+  });
+  if (memoonaExisting && memoonaExisting.prescriptionTemplate !== 'minimal') {
+    await prisma.doctor.update({
+      where: { id: memoonaExisting.id },
+      data: { prescriptionTemplate: 'minimal' },
+    });
+  }
+
+  for (const doc of lifecareDoctors) {
+    const existing = await prisma.doctor.findFirst({
+      where: { name: { equals: doc.name, mode: 'insensitive' } },
+    });
+    if (existing) {
+      if (process.env.SEED_FORCE === '1') {
+        await prisma.doctor.update({
+          where: { id: existing.id },
+          data: {
+            specialization: doc.specialization,
+            qualification: doc.qualification,
+            qualificationsExtra: doc.qualificationsExtra,
+            prescriptionTemplate: doc.prescriptionTemplate,
+            departmentId: doc.departmentId ?? null,
+            fee: doc.fee,
+            contact: doc.contact,
+            email: doc.email,
+            isActive: true,
+          },
+        });
+      }
+    } else {
+      await prisma.doctor.create({ data: doc });
+    }
   }
 
   const drugCount = await prisma.drug.count();

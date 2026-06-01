@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Stethoscope } from 'lucide-react';
-import { api, type Doctor, type NewDoctor } from '../lib/api';
+import { api, type Doctor, type NewDoctor, type PrescriptionTemplate } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useConfirmDelete } from '../hooks/useConfirmDelete';
@@ -25,15 +25,29 @@ import {
   requiredField,
 } from '../lib/validation-errors';
 
-const emptyForm: NewDoctor = { name: '' };
+const emptyForm: NewDoctor = {
+  name: '',
+  prescriptionTemplate: 'full',
+};
+
+const PAD_STYLE_OPTIONS: { value: PrescriptionTemplate; label: string }[] = [
+  { value: 'full', label: 'Full clinical pad (e.g. Dr. Waqas Satti)' },
+  { value: 'standard', label: 'Standard pad (e.g. Dr. Muhammad Usman)' },
+  { value: 'minimal', label: 'Simple pad — logo + patient row only (e.g. Dr. Memoona)' },
+  { value: 'pediatric', label: 'Pediatrics pad (e.g. Dr. Ammara Tanweer)' },
+  { value: 'banner', label: 'General pad — LifeCare logo + doctor (e.g. Dr. Komal Usman)' },
+];
 
 function doctorToForm(d: Doctor): NewDoctor {
   return {
     name: d.name,
     qualification: d.qualification ?? undefined,
+    qualificationsExtra: d.qualificationsExtra ?? undefined,
     specialization: d.specialization ?? undefined,
+    prescriptionTemplate: d.prescriptionTemplate ?? 'full',
     departmentId: d.departmentId ?? undefined,
     contact: d.contact ? formatPakPhoneInput(d.contact) : undefined,
+    email: d.email ?? undefined,
     fee: Number(d.fee) || undefined,
   };
 }
@@ -52,7 +66,7 @@ export default function Doctors() {
 
   const { data: doctors, isLoading, error } = useQuery({
     queryKey: ['doctors'],
-    queryFn: api.doctors.list,
+    queryFn: () => api.doctors.list({ all: true }),
   });
 
   const { data: departments } = useQuery({
@@ -65,6 +79,7 @@ export default function Doctors() {
     mutationFn: api.doctors.create,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['doctors'] });
+      qc.invalidateQueries({ queryKey: ['visits'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       setOpen(false);
       setForm(emptyForm);
@@ -78,6 +93,7 @@ export default function Doctors() {
       api.doctors.update(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['doctors'] });
+      qc.invalidateQueries({ queryKey: ['visits'] });
       setEditId(null);
       setForm(emptyForm);
       toast('Doctor updated');
@@ -89,6 +105,7 @@ export default function Doctors() {
     mutationFn: api.doctors.delete,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['doctors'] });
+      qc.invalidateQueries({ queryKey: ['visits'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       toast('Doctor removed');
     },
@@ -176,6 +193,9 @@ export default function Doctors() {
                       {displayPakPhone(d.contact)}
                     </p>
                   )}
+                  {d.email && (
+                    <p className="mt-0.5 text-xs text-slate-500">{d.email}</p>
+                  )}
                   <div className="mt-3">
                     <ActionButtons
                       compact
@@ -241,12 +261,50 @@ export default function Doctors() {
               className={fieldInputClass(!!mergedErrors.name)}
             />
           </FormField>
-          <FormField label="Specialization" error={mergedErrors.specialization}>
+          <FormField label="Specialization (on prescription)" error={mergedErrors.specialization}>
             <input
               value={form.specialization ?? ''}
               onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+              placeholder="e.g. Neurologist / Diabetologist"
               className={fieldInputClass(!!mergedErrors.specialization)}
             />
+          </FormField>
+          <FormField label="Primary qualification" error={mergedErrors.qualification}>
+            <input
+              value={form.qualification ?? ''}
+              onChange={(e) => setForm({ ...form, qualification: e.target.value })}
+              placeholder="e.g. MBBS, MD (Neurology)"
+              className={fieldInputClass(!!mergedErrors.qualification)}
+            />
+          </FormField>
+          <FormField
+            label="Extra qualifications (one per line)"
+            error={mergedErrors.qualificationsExtra}
+          >
+            <textarea
+              className={`${fieldInputClass(!!mergedErrors.qualificationsExtra)} min-h-[72px]`}
+              value={form.qualificationsExtra ?? ''}
+              onChange={(e) => setForm({ ...form, qualificationsExtra: e.target.value })}
+              placeholder="Diploma in Diabetes…&#10;Fellowship…"
+            />
+          </FormField>
+          <FormField label="Prescription pad style" error={mergedErrors.prescriptionTemplate}>
+            <select
+              value={form.prescriptionTemplate ?? 'full'}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  prescriptionTemplate: e.target.value as PrescriptionTemplate,
+                })
+              }
+              className={fieldInputClass(!!mergedErrors.prescriptionTemplate)}
+            >
+              {PAD_STYLE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </FormField>
           <FormField label="Department" error={mergedErrors.departmentId}>
             <select
@@ -264,7 +322,7 @@ export default function Doctors() {
               ))}
             </select>
           </FormField>
-          <FormField label="Contact" error={mergedErrors.contact}>
+          <FormField label="Phone (on prescription)" error={mergedErrors.contact}>
             <input
               value={form.contact ?? ''}
               onChange={(e) => {
@@ -283,6 +341,15 @@ export default function Doctors() {
               placeholder={PHONE_PLACEHOLDER}
               inputMode="tel"
               maxLength={16}
+            />
+          </FormField>
+          <FormField label="Email (on prescription)" error={mergedErrors.email}>
+            <input
+              type="email"
+              value={form.email ?? ''}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className={fieldInputClass(!!mergedErrors.email)}
+              placeholder="lifecarehospital.islamabad@gmail.com"
             />
           </FormField>
           <FormField label="Consultation fee (PKR)" error={mergedErrors.fee}>

@@ -13,6 +13,7 @@ const schema = z.object({
   city: z.string().optional(),
   tagline: z.string().optional(),
   currency: z.string().optional(),
+  logoUrl: z.string().optional().nullable(),
 });
 
 export const settingsRoutes: FastifyPluginAsync = async (app) => {

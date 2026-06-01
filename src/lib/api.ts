@@ -134,7 +134,8 @@ export const api = {
       request(`/patients/${id}`, { method: 'DELETE' }),
   },
   doctors: {
-    list: () => request<Doctor[]>('/doctors'),
+    list: (opts?: { all?: boolean }) =>
+      request<Doctor[]>(opts?.all ? '/doctors?all=1' : '/doctors'),
     create: (data: NewDoctor) =>
       request<Doctor>('/doctors', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<NewDoctor>) =>
@@ -248,6 +249,11 @@ export type NewAppUser = {
 export type HospitalBranding = {
   hospitalName: string;
   tagline: string | null;
+  logoUrl?: string | null;
+  contact?: string | null;
+  email?: string | null;
+  address?: string | null;
+  city?: string | null;
 };
 
 export type HospitalSettings = HospitalBranding & {
@@ -257,6 +263,7 @@ export type HospitalSettings = HospitalBranding & {
   address: string | null;
   city: string | null;
   currency: string;
+  logoUrl: string | null;
 };
 
 export type Patient = {
@@ -290,12 +297,22 @@ export type NewPatient = {
   notes?: string;
 };
 
+export type PrescriptionTemplate =
+  | 'full'
+  | 'standard'
+  | 'minimal'
+  | 'banner'
+  | 'pediatric';
+
 export type Doctor = {
   id: string;
   name: string;
   qualification: string | null;
+  qualificationsExtra: string | null;
   specialization: string | null;
+  prescriptionTemplate: PrescriptionTemplate;
   contact: string | null;
+  email: string | null;
   departmentId: string | null;
   fee: string | number;
   department?: { name: string; code: string } | null;
@@ -304,9 +321,12 @@ export type Doctor = {
 export type NewDoctor = {
   name: string;
   qualification?: string;
+  qualificationsExtra?: string;
   specialization?: string;
+  prescriptionTemplate?: PrescriptionTemplate;
   departmentId?: string;
   contact?: string;
+  email?: string;
   fee?: number;
 };
 
@@ -462,7 +482,11 @@ export type VisitDetail = VisitSummary & {
     id: string;
     name: string;
     qualification: string | null;
+    qualificationsExtra: string | null;
     specialization: string | null;
+    prescriptionTemplate: PrescriptionTemplate;
+    contact: string | null;
+    email: string | null;
     fee: number;
     department?: { name: string } | null;
   } | null;

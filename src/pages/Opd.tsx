@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Download,
   FileText,
   History,
   Plus,
   Printer,
   Receipt,
-  Stethoscope,
   Trash2,
   UserPlus,
 } from 'lucide-react';
@@ -20,10 +20,20 @@ import PageHeader from '../components/PageHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Modal from '../components/Modal';
 import VisitPrintModal from '../components/VisitPrintModal';
+import LifeCarePrescription from '../components/LifeCarePrescription';
+import LifeCareBill from '../components/LifeCareBill';
+import PrintSheet from '../components/PrintSheet';
 import { useVisitPrint } from '../hooks/useVisitPrint';
+import { buildPrintFilename } from '../lib/print-filename';
+import { printElementByIframe } from '../lib/print-document';
 import FormField, { fieldInputClass } from '../components/FormField';
 import SearchableDropdown, { type SearchableOption } from '../components/SearchableDropdown';
-import { formatPakPhoneInput, PHONE_PLACEHOLDER } from '../lib/pakistan-inputs';
+import DoctorPrescriptionPreview from '../components/DoctorPrescriptionPreview';
+import {
+  formatPakPhoneInput,
+  PHONE_PLACEHOLDER,
+  validatePakPhone,
+} from '../lib/pakistan-inputs';
 import { getPakistanDateString } from '../lib/pakistan-time';
 import { getValidationFields } from '../lib/validation-errors';
 
@@ -54,14 +64,6 @@ export default function Opd() {
   const [newAge, setNewAge] = useState('');
 
   const [doctorId, setDoctorId] = useState('');
-  const [weightKg, setWeightKg] = useState('');
-  const [bloodPressure, setBloodPressure] = useState('');
-  const [temperature, setTemperature] = useState('');
-  const [bloodSugar, setBloodSugar] = useState('');
-  const [pulse, setPulse] = useState('');
-  const [spo2, setSpo2] = useState('');
-  const [diagnosis, setDiagnosis] = useState('');
-  const [advice, setAdvice] = useState('');
   const [consultationFee, setConsultationFee] = useState('');
   const [discount, setDiscount] = useState('');
   const [isPaid, setIsPaid] = useState(false);
@@ -77,9 +79,14 @@ export default function Opd() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const print = useVisitPrint();
+  const printAfterSaveRef = useRef(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const { data: doctors } = useQuery({ queryKey: ['doctors'], queryFn: api.doctors.list });
+  const { data: doctors } = useQuery({
+    queryKey: ['doctors'],
+    queryFn: api.doctors.list,
+    staleTime: 0,
+  });
   const { data: drugs, isFetching: loadingDrugs } = useQuery({
     queryKey: ['drugs', 'opd', drugSearch],
     queryFn: () => api.drugs.list(drugSearch.trim() || undefined),
@@ -109,12 +116,13 @@ export default function Opd() {
   });
 
   useEffect(() => {
-    if (!doctorId) return;
-    const doc = doctors?.find((d) => d.id === doctorId);
-    if (doc && !consultationFee) {
-      setConsultationFee(String(Number(doc.fee) || 0));
+    if (!doctorId) {
+      setConsultationFee('');
+      return;
     }
-  }, [doctorId, doctors, consultationFee]);
+    const doc = doctors?.find((d) => d.id === doctorId);
+    if (doc) setConsultationFee(String(Number(doc.fee) || 0));
+  }, [doctorId, doctors]);
 
   const lineTotal = useMemo(
     () => lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0),
@@ -124,16 +132,34 @@ export default function Opd() {
   const discountNum = Number(discount) || 0;
   const grandTotal = Math.max(0, feeNum + lineTotal - discountNum);
 
+  const selectedDoctor = useMemo(
+    () => doctors?.find((d) => d.id === doctorId) ?? null,
+    [doctors, doctorId]
+  );
+
   const createVisit = useMutation({
     mutationFn: api.visits.create,
-    onSuccess: (visit) => {
+    onSuccess: async (visit) => {
       qc.invalidateQueries({ queryKey: ['visits'] });
       qc.invalidateQueries({ queryKey: ['drugs'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['patients'] });
-      print.showVisit(visit);
-      toast(`Visit ${visit.visitNumber} saved`);
+      const drugLines = visit.lines.filter((l) => l.lineType === 'drug').length;
+      const msg =
+        drugLines > 0
+          ? `Visit ${visit.visitNumber} saved. Pharmacy stock updated for ${drugLines} medicine(s).`
+          : `Visit ${visit.visitNumber} saved`;
+
+      if (printAfterSaveRef.current) {
+        printAfterSaveRef.current = false;
+        toast(`${msg} Opening print…`);
+        await print.autoPrintVisit(visit, 'prescription');
+      } else {
+        print.rememberVisit(visit);
+        toast(msg);
+      }
     },
+    onError: (e: Error) => toast(e.message, 'error'),
   });
 
   const serverFields = getValidationFields(createVisit.error) ?? {};
@@ -243,6 +269,9 @@ export default function Opd() {
     if (patientMode === 'new') {
       if (!newName.trim()) errors.newName = 'Patient name is required';
       if (!newPhone.trim()) errors.newPhone = 'Phone number is required';
+      else if (!validatePakPhone(newPhone)) {
+        errors.newPhone = 'Enter a valid Pakistani mobile number (03xx…)';
+      }
     }
     if (!doctorId) errors.doctorId = 'Select a doctor';
 
@@ -252,6 +281,7 @@ export default function Opd() {
     }
 
     setFieldErrors({});
+    printAfterSaveRef.current = printAfter;
     const payload = {
       patientId: patientMode === 'existing' ? selectedPatient!.id : undefined,
       newPatient:
@@ -264,14 +294,6 @@ export default function Opd() {
             }
           : undefined,
       doctorId: doctorId || null,
-      weightKg: weightKg ? Number(weightKg) : null,
-      bloodPressure: bloodPressure || null,
-      temperature: temperature ? Number(temperature) : null,
-      bloodSugar: bloodSugar ? Number(bloodSugar) : null,
-      pulse: pulse ? Number(pulse) : null,
-      spo2: spo2 ? Number(spo2) : null,
-      diagnosis: diagnosis || null,
-      advice: advice || null,
       consultationFee: feeNum,
       discount: discountNum,
       isPaid,
@@ -286,7 +308,6 @@ export default function Opd() {
       })),
     };
 
-    if (printAfter) print.setPrintMode('both');
     createVisit.mutate(payload);
   }
 
@@ -296,14 +317,8 @@ export default function Opd() {
     setNewName('');
     setNewPhone('');
     setLines([]);
-    setDiagnosis('');
-    setAdvice('');
-    setWeightKg('');
-    setBloodPressure('');
-    setTemperature('');
-    setBloodSugar('');
-    setPulse('');
-    setSpo2('');
+    setDoctorId('');
+    setConsultationFee('');
     setDiscount('');
     setIsPaid(false);
     print.closePrint();
@@ -311,11 +326,28 @@ export default function Opd() {
     createVisit.reset();
   }
 
+  function downloadBlankPrescription() {
+    if (!selectedDoctor) {
+      toast('Select a consulting doctor first', 'error');
+      return;
+    }
+    const filename = buildPrintFilename(
+      selectedDoctor.name.replace(/^dr\.?\s*/i, ''),
+      'blank-prescription'
+    );
+    requestAnimationFrame(() => printElementByIframe('#opd-blank-rx-print', filename));
+  }
+
+  function downloadBlankBill() {
+    const filename = buildPrintFilename('bill', 'blank-bill');
+    requestAnimationFrame(() => printElementByIframe('#opd-blank-bill-print', filename));
+  }
+
   return (
     <div className="page-enter mx-auto max-w-6xl space-y-8">
       <PageHeader
         title="OPD & Prescription"
-        subtitle="Register patient, record vitals, prescribe medicines and labs, print prescription and bill"
+        subtitle="Patient, prescription, billing, and print or download blank pads per doctor"
         action={
           <button type="button" onClick={resetForm} className="btn-secondary">
             New visit
@@ -444,67 +476,36 @@ export default function Opd() {
             )}
           </section>
 
-          {/* Vitals & doctor */}
-          <section className="card-panel p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
-              <Stethoscope className="h-5 w-5 text-brand-600" />
-              Vitals & doctor
-            </h2>
-            <div className="mb-4">
-              <FormField label="Consulting doctor" required error={mergedErrors.doctorId}>
-                <select
-                  className={fieldInputClass(!!mergedErrors.doctorId)}
-                  value={doctorId}
-                  onChange={(e) => setDoctorId(e.target.value)}
-                >
-                  <option value="">Select doctor</option>
-                  {doctors?.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                      {d.specialization ? ` (${d.specialization})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <FormField label="Weight (kg)">
-                <input className="input" type="number" step="0.1" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
-              </FormField>
-              <FormField label="Blood pressure">
-                <input className="input" placeholder="120/80" value={bloodPressure} onChange={(e) => setBloodPressure(e.target.value)} />
-              </FormField>
-              <FormField label="Temperature (°F)">
-                <input className="input" type="number" step="0.1" value={temperature} onChange={(e) => setTemperature(e.target.value)} />
-              </FormField>
-              <FormField label="Blood sugar">
-                <input className="input" type="number" value={bloodSugar} onChange={(e) => setBloodSugar(e.target.value)} />
-              </FormField>
-              <FormField label="Pulse">
-                <input className="input" type="number" value={pulse} onChange={(e) => setPulse(e.target.value)} />
-              </FormField>
-              <FormField label="SpO2 (%)">
-                <input className="input" type="number" max={100} value={spo2} onChange={(e) => setSpo2(e.target.value)} />
-              </FormField>
-            </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <FormField label="Diagnosis">
-                <textarea className="input min-h-[80px]" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} />
-              </FormField>
-              <FormField label="Advice / notes">
-                <textarea className="input min-h-[80px]" value={advice} onChange={(e) => setAdvice(e.target.value)} />
-              </FormField>
-            </div>
-          </section>
-
-          {/* Prescription lines */}
+          {/* Prescription & billing */}
           <section className="card-panel overflow-visible p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
               <FileText className="h-5 w-5 text-brand-600" />
               Prescription & billing
             </h2>
 
-            <div className="mb-4">
+            <FormField label="Consulting doctor" required error={mergedErrors.doctorId}>
+              <select
+                className={fieldInputClass(!!mergedErrors.doctorId)}
+                value={doctorId}
+                onChange={(e) => setDoctorId(e.target.value)}
+              >
+                <option value="">Select doctor</option>
+                {doctors?.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                    {d.specialization ? ` (${d.specialization})` : ''}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            {selectedDoctor && (
+              <div className="mt-3">
+                <DoctorPrescriptionPreview doctor={selectedDoctor} />
+              </div>
+            )}
+
+            <div className="mb-4 mt-6 border-t border-slate-100 pt-6">
               <SearchableDropdown
                 label="Medicine from pharmacy"
                 placeholder="Search pharmacy stock and select to add"
@@ -714,44 +715,75 @@ export default function Opd() {
               </p>
             )}
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={createVisit.isPending}
-                onClick={() => handleSubmit(true)}
-                className="btn-primary"
-              >
-                <Printer className="h-4 w-4" />
-                {createVisit.isPending ? 'Saving…' : 'Save & print'}
-              </button>
-              <button
-                type="button"
-                disabled={createVisit.isPending}
-                onClick={() => handleSubmit(false)}
-                className="btn-secondary"
-              >
-                Save visit only
-              </button>
-              {print.savedVisit && (
-                <>
+            <div className="mt-6 space-y-4 border-t border-slate-100 pt-6">
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={createVisit.isPending}
+                  onClick={() => handleSubmit(true)}
+                  className="btn-primary"
+                >
+                  <Printer className="h-4 w-4" />
+                  {createVisit.isPending ? 'Saving…' : 'Save & print'}
+                </button>
+                <button
+                  type="button"
+                  disabled={createVisit.isPending}
+                  onClick={() => handleSubmit(false)}
+                  className="btn-secondary"
+                >
+                  Save visit only
+                </button>
+                {print.savedVisit && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => print.openVisitPrint(print.savedVisit!.id, 'prescription')}
+                      className="btn-secondary"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Prescription
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => print.openVisitPrint(print.savedVisit!.id, 'bill')}
+                      className="btn-secondary"
+                    >
+                      <Receipt className="h-4 w-4" />
+                      Bill
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Blank templates (A5 print / PDF)
+                </p>
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => print.openVisitPrint(print.savedVisit!.id, 'prescription')}
                     className="btn-secondary"
+                    disabled={!selectedDoctor}
+                    onClick={downloadBlankPrescription}
                   >
-                    <FileText className="h-4 w-4" />
-                    Prescription
+                    <Download className="h-4 w-4" />
+                    Blank prescription
                   </button>
                   <button
                     type="button"
-                    onClick={() => print.openVisitPrint(print.savedVisit!.id, 'bill')}
                     className="btn-secondary"
+                    onClick={downloadBlankBill}
                   >
-                    <Receipt className="h-4 w-4" />
-                    Bill
+                    <Download className="h-4 w-4" />
+                    Blank bill
                   </button>
-                </>
-              )}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Blank prescription uses the selected doctor&apos;s pad. Blank bill is the hospital
+                  receipt layout.
+                </p>
+              </div>
             </div>
           </section>
         </div>
@@ -819,7 +851,21 @@ export default function Opd() {
         onClose={print.closePrint}
         onModeChange={print.setPrintMode}
         onPrint={print.printNow}
+        printing={print.loading}
       />
+
+      <PrintSheet active>
+        <div id="opd-blank-rx-print">
+          {selectedDoctor ? (
+            <LifeCarePrescription mode="blank" doctor={selectedDoctor} />
+          ) : (
+            <div className="hc-print-document" aria-hidden />
+          )}
+        </div>
+        <div id="opd-blank-bill-print">
+          <LifeCareBill mode="blank" />
+        </div>
+      </PrintSheet>
     </div>
   );
 }

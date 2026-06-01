@@ -11,7 +11,8 @@ type Props = {
   mode: PrintMode;
   onClose: () => void;
   onModeChange: (mode: PrintMode) => void;
-  onPrint: () => void;
+  onPrint: () => void | Promise<void>;
+  printing?: boolean;
 };
 
 export default function VisitPrintModal({
@@ -21,6 +22,7 @@ export default function VisitPrintModal({
   onClose,
   onModeChange,
   onPrint,
+  printing = false,
 }: Props) {
   return (
     <>
@@ -38,7 +40,7 @@ export default function VisitPrintModal({
               from the patient name and visit number.
             </p>
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 p-3 shadow-inner">
-              <div className="mx-auto max-h-[58vh] overflow-y-auto rounded-lg bg-white p-4 shadow-sm">
+              <div className="lc-print-preview mx-auto max-h-[58vh] overflow-y-auto rounded-lg bg-white p-4 shadow-sm">
                 <VisitPrint visit={visit} mode={mode} />
               </div>
             </div>
@@ -79,9 +81,14 @@ export default function VisitPrintModal({
                 Both pages
               </button>
             </div>
-            <button type="button" onClick={onPrint} className="btn-primary w-full">
+            <button
+              type="button"
+              onClick={() => void onPrint()}
+              disabled={printing}
+              className="btn-primary w-full disabled:opacity-60"
+            >
               <Printer className="h-4 w-4" />
-              Print now
+              {printing ? 'Preparing…' : 'Print now'}
             </button>
           </div>
         )}
