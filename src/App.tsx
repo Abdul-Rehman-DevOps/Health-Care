@@ -5,6 +5,8 @@ import { useSessionTimeout } from './hooks/useSessionTimeout';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Opd from './pages/Opd';
+import PreviousVisits from './pages/PreviousVisits';
 import Patients from './pages/Patients';
 import Doctors from './pages/Doctors';
 import Appointments from './pages/Appointments';
@@ -48,6 +50,8 @@ function AppShell() {
 
   const content = {
     dashboard: <Dashboard onNavigate={navigateTo} />,
+    opd: <Opd />,
+    visits: <PreviousVisits />,
     patients: <Patients />,
     doctors: <Doctors />,
     appointments: <Appointments />,

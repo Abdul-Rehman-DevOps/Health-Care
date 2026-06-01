@@ -13,6 +13,8 @@ import { drugRoutes } from './routes/drugs.js';
 import { brandingRoutes } from './routes/branding.js';
 import { settingsRoutes } from './routes/settings.js';
 import { userRoutes } from './routes/users.js';
+import { visitRoutes } from './routes/visits.js';
+import { labTestRoutes } from './routes/lab-tests.js';
 
 const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST ?? '0.0.0.0';
@@ -45,6 +47,8 @@ app.register(appointmentRoutes, { prefix: '/api/appointments', ...protectedHook 
 app.register(drugRoutes, { prefix: '/api/drugs', ...protectedHook });
 app.register(settingsRoutes, { prefix: '/api/settings', ...protectedHook });
 app.register(userRoutes, { prefix: '/api/users', ...protectedHook });
+app.register(visitRoutes, { prefix: '/api/visits', ...protectedHook });
+app.register(labTestRoutes, { prefix: '/api/lab-tests', ...protectedHook });
 
 try {
   await app.listen({ port, host });

@@ -13,6 +13,7 @@ Enterprise-style web application for hospital operations: patient registration, 
 - [Security and session management](#security-and-session-management)
 - [Regional and validation rules](#regional-and-validation-rules)
 - [Branding and configuration](#branding-and-configuration)
+- [Printing](#printing)
 - [Deployment](#deployment)
 - [Configuration reference](#configuration-reference)
 - [API reference](#api-reference)
@@ -63,9 +64,47 @@ On first startup, the API container applies migrations and runs the seed script 
 
 ## Application modules
 
+### OPD & Prescription (primary clinical flow)
+
+End-to-end outpatient desk workflow aligned with clinic practice:
+
+- **Patient**: searchable dropdown (name, ID, phone) or quick-register new patient (name, phone, gender, age)
+- **Vitals**: weight, blood pressure, temperature, blood sugar, pulse, SpO2
+- **Doctor**: select consulting doctor (name prints on prescription; consultation fee auto-filled)
+- **Medicines**: searchable pharmacy picker; custom medicine name and dosage
+- **Lab tests**: searchable lab catalog picker; custom lab test name and price (not in catalog)
+- **Billing**: consultation fee, line items, discount, paid/unpaid flag; visit numbers `V-*`, bills `B-*`
+- **Save & print**: professional A5 prescription and bill (see [Printing](#printing))
+- **History**: per-patient visit modal with reprint
+- **Today’s visits**: sidebar list for quick reprint
+
+### Previous visits
+
+Searchable archive of OPD records:
+
+- Filter by patient name, visit number, patient ID, and date range
+- View full visit detail (vitals, diagnosis, lines, bill status)
+- Reprint prescription, bill, or both
+- **Admin**: delete visit (removes prescription lines and bill)
+
+### Printing
+
+Prescription and bill are designed for **A5** paper and clinic printers:
+
+| Output | Pages |
+|--------|--------|
+| Prescription only | 1 × A5 |
+| Bill only | 1 × A5 |
+| Both | 2 × A5 (prescription, then bill) |
+
+- Layout uses compact print styles; long prescriptions auto-compact when there are many line items
+- **Save as PDF**: default file name is `{PatientName}_{VisitNumber}` (e.g. `Ali Khan_V-1005`)
+- Print runs in a hidden iframe so the saved PDF does not use the app URL as the document title
+- In the browser print dialog: set paper to **A5**, and under **More settings** turn off **Headers and footers** so the website URL does not appear at the bottom of the page
+
 ### Dashboard
 
-Operational summary: patient count, active doctors, same-day appointments, pharmacy stock metrics, and low-stock indicators. Hospital name is driven by configured branding.
+Operational summary: patient count, active doctors, same-day appointments, pharmacy stock metrics, and low-stock indicators. Quick link to **New OPD visit**. Hospital name is driven by configured branding.
 
 ### Patients
 
@@ -409,6 +448,10 @@ Require `Authorization: Bearer <token>`.
 | `/settings` | `GET` | Hospital profile |
 | `/settings` | `PATCH` | Admin only |
 | `/users` | `GET`, `POST`, `PATCH /:id/password`, `DELETE /:id` | Admin only |
+| `/visits` | `GET`, `GET /:id`, `GET /patient/:id/history`, `POST` | OPD visit, vitals, Rx, bill |
+| `/visits/:id` | `DELETE` | Admin only; removes visit, lines, and bill |
+| `/visits/:id/bill/paid` | `PATCH` | Mark bill paid |
+| `/lab-tests` | `GET` | Lab catalog (`?search=` optional) |
 
 Validation errors return structured field messages suitable for form display.
 
@@ -419,6 +462,8 @@ Validation errors return structured field messages suitable for form display.
 | Path | Module |
 |------|--------|
 | `/`, `/dashboard` | Dashboard |
+| `/opd` | OPD & Prescription |
+| `/visits` | Previous visits (records & reprint) |
 | `/patients` | Patients |
 | `/doctors` | Doctors |
 | `/appointments` | Appointments |
@@ -441,7 +486,7 @@ Unauthenticated users are redirected to `/login`. Deep links to protected paths 
 | Seed | `server/prisma/seed.ts` (idempotent; safe on every restart) |
 | Persistent storage | Docker volume `health-care_pgdata` |
 
-**Entities:** `HospitalSettings`, `User`, `Patient`, `Doctor`, `Department`, `Appointment`, `Drug`, `LabTest`, `SystemCounter`.
+**Entities:** `HospitalSettings`, `User`, `Patient`, `Doctor`, `Department`, `Appointment`, `Visit`, `PrescriptionLine`, `Bill`, `Drug`, `LabTest`, `SystemCounter`.
 
 See [Data persistence](#data-persistence) for backup commands and what survives restarts.
 
@@ -453,10 +498,10 @@ See [Data persistence](#data-persistence) for backup commands and what survives 
 Health_Care/
 ├── src/                          React application
 │   ├── pages/                    Route-level views
-│   ├── components/               Layout, forms, dialogs, branding
+│   ├── components/               Layout, VisitPrint, SearchableDropdown, dialogs
 │   ├── context/                  Auth, hospital branding, toasts
-│   ├── hooks/                    Session timeout, confirm delete
-│   └── lib/                      API client, routes, validation, auth session
+│   ├── hooks/                    Session timeout, visit print, confirm delete
+│   └── lib/                      API client, print helpers, validation, auth session
 ├── public/                       Static assets (favicon)
 ├── server/
 │   ├── src/routes/               REST handlers

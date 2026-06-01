@@ -12,6 +12,7 @@ export const dashboardRoutes: FastifyPluginAsync = async (app) => {
       patients,
       doctors,
       appointmentsToday,
+      visitsToday,
       drugs,
       lowStock,
       settings,
@@ -24,6 +25,9 @@ export const dashboardRoutes: FastifyPluginAsync = async (app) => {
           status: { not: 'Cancelled' },
         },
       }),
+      prisma.visit.count({
+        where: { visitDate: { gte: today, lt: tomorrow } },
+      }),
       prisma.drug.count({ where: { isActive: true } }),
       prisma.drug.count({
         where: { isActive: true, stockQuantity: { lte: 10 } },
@@ -35,6 +39,7 @@ export const dashboardRoutes: FastifyPluginAsync = async (app) => {
       patients,
       doctors,
       appointmentsToday,
+      visitsToday,
       drugs,
       lowStock,
       hospitalName: settings?.hospitalName ?? 'Health Care',

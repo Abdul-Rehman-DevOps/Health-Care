@@ -1,5 +1,7 @@
 export type PageId =
   | 'dashboard'
+  | 'opd'
+  | 'visits'
   | 'patients'
   | 'doctors'
   | 'appointments'
@@ -10,6 +12,8 @@ export type PageId =
 
 export const PAGE_PATHS: Record<PageId, string> = {
   dashboard: '/dashboard',
+  opd: '/opd',
+  visits: '/visits',
   patients: '/patients',
   doctors: '/doctors',
   appointments: '/appointments',

@@ -24,11 +24,13 @@ async function main() {
       },
     });
   }
-  await prisma.systemCounter.upsert({
-    where: { name: 'patient' },
-    create: { name: 'patient', value: 1000 },
-    update: {},
-  });
+  for (const name of ['patient', 'visit', 'bill']) {
+    await prisma.systemCounter.upsert({
+      where: { name },
+      create: { name, value: 1000 },
+      update: {},
+    });
+  }
 
   const settings = await prisma.hospitalSettings.findFirst();
   if (!settings) {

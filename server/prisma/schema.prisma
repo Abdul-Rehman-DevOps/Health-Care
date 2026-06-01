@@ -52,6 +52,7 @@ model Doctor {
 
   department   Department?   @relation(fields: [departmentId], references: [id])
   appointments Appointment[]
+  visits       Visit[]
 
   @@index([departmentId])
   @@index([isActive])
@@ -88,6 +89,7 @@ model Patient {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   appointments Appointment[]
+  visits       Visit[]
 
   @@index([name])
   @@index([createdAt])
@@ -136,6 +138,8 @@ model Drug {
 
   @@index([name])
   @@index([category])
+  prescriptionLines PrescriptionLine[]
+
   @@index([isActive])
   @@map("drugs")
 }
@@ -151,8 +155,74 @@ model LabTest {
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
 
+  prescriptionLines PrescriptionLine[]
+
   @@index([category])
   @@map("lab_tests")
+}
+
+model Visit {
+  id              String   @id @default(uuid()) @db.Uuid
+  visitNumber     String   @unique @map("visit_number")
+  patientId       String   @map("patient_id") @db.Uuid
+  doctorId        String?  @map("doctor_id") @db.Uuid
+  visitDate       DateTime @default(now()) @map("visit_date")
+  weightKg        Decimal? @map("weight_kg") @db.Decimal(6, 2)
+  bloodPressure   String?  @map("blood_pressure")
+  temperature     Decimal? @db.Decimal(5, 2)
+  bloodSugar      Decimal? @map("blood_sugar") @db.Decimal(6, 2)
+  pulse           Int?
+  spo2            Int?
+  diagnosis       String?
+  advice          String?
+  consultationFee Decimal  @default(0) @map("consultation_fee") @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  patient Patient            @relation(fields: [patientId], references: [id])
+  doctor  Doctor?            @relation(fields: [doctorId], references: [id])
+  lines   PrescriptionLine[]
+  bill    Bill?
+
+  @@index([patientId])
+  @@index([visitDate])
+  @@index([doctorId])
+  @@map("visits")
+}
+
+model PrescriptionLine {
+  id        String  @id @default(uuid()) @db.Uuid
+  visitId   String  @map("visit_id") @db.Uuid
+  lineType  String  @map("line_type")
+  drugId    String? @map("drug_id") @db.Uuid
+  labTestId String? @map("lab_test_id") @db.Uuid
+  name      String
+  dosage    String?
+  quantity  Int     @default(1)
+  unitPrice Decimal @default(0) @map("unit_price") @db.Decimal(10, 2)
+  amount    Decimal @default(0) @db.Decimal(10, 2)
+
+  visit   Visit    @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  drug    Drug?    @relation(fields: [drugId], references: [id])
+  labTest LabTest? @relation(fields: [labTestId], references: [id])
+
+  @@index([visitId])
+  @@map("prescription_lines")
+}
+
+model Bill {
+  id         String   @id @default(uuid()) @db.Uuid
+  visitId    String   @unique @map("visit_id") @db.Uuid
+  billNumber String   @unique @map("bill_number")
+  subtotal   Decimal  @db.Decimal(10, 2)
+  discount   Decimal  @default(0) @db.Decimal(10, 2)
+  total      Decimal  @db.Decimal(10, 2)
+  isPaid     Boolean  @default(false) @map("is_paid")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("bills")
 }
 
 model SystemCounter {

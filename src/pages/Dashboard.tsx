@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
   Calendar,
+  ClipboardList,
   HeartPulse,
   Pill,
   Sparkles,
@@ -54,30 +55,49 @@ export default function Dashboard({ onNavigate }: Props) {
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{name}</h1>
             <p className="mt-2 text-brand-100">Hospital management at a glance</p>
           </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('appointments')}
-            className="group rounded-2xl bg-white/15 px-6 py-4 text-center ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/25 hover:shadow-glow"
-          >
-            <HeartPulse className="mx-auto mb-1 h-5 w-5 text-brand-200 transition group-hover:scale-110" />
-            <p className="text-3xl font-bold">
-              {isLoading ? '…' : data?.appointmentsToday ?? 0}
-            </p>
-            <p className="text-xs font-medium text-brand-100">Appointments today</p>
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => onNavigate('opd')}
+              className="group rounded-2xl bg-white px-5 py-4 text-center text-brand-900 shadow-lg transition hover:-translate-y-1"
+            >
+              <ClipboardList className="mx-auto mb-1 h-5 w-5 text-brand-600" />
+              <p className="text-sm font-bold">New OPD visit</p>
+              <p className="text-xs text-brand-600">Prescription & bill</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('appointments')}
+              className="group rounded-2xl bg-white/15 px-6 py-4 text-center ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/25 hover:shadow-glow"
+            >
+              <HeartPulse className="mx-auto mb-1 h-5 w-5 text-brand-200 transition group-hover:scale-110" />
+              <p className="text-3xl font-bold">
+                {isLoading ? '…' : data?.appointmentsToday ?? 0}
+              </p>
+              <p className="text-xs font-medium text-brand-100">Appointments today</p>
+            </button>
+          </div>
         </div>
       </div>
 
       <PageHeader title="Quick access" subtitle="Click a card to open that section" />
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <StatCard
+          label="OPD today"
+          value={isLoading ? '…' : data?.visitsToday ?? 0}
+          icon={ClipboardList}
+          gradient="from-teal-500 to-teal-700"
+          onClick={() => onNavigate('opd')}
+          delay={0}
+        />
         <StatCard
           label="Total patients"
           value={isLoading ? '…' : data?.patients ?? 0}
           icon={Users}
           gradient="from-blue-500 to-blue-700"
           onClick={() => onNavigate('patients')}
-          delay={0}
+          delay={40}
         />
         <StatCard
           label="Active doctors"

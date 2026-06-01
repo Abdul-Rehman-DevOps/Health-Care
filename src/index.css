@@ -142,3 +142,689 @@
     @apply absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-400 via-teal-400 to-brand-600;
   }
 }
+
+/* Screen: print sheet hidden until print */
+#health-care-print-root {
+  display: none;
+}
+
+/* Professional prescription & bill (preview + print) */
+.hc-print-document {
+  width: 100%;
+  max-width: 148mm;
+  margin: 0 auto;
+  color: #0f172a;
+  background: #fff;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+}
+
+.hc-print-page {
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.hc-print-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.hc-print-page-break {
+  page-break-before: always;
+  break-before: page;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.hc-print-top-bar {
+  height: 5pt;
+  background: linear-gradient(90deg, #0f766e 0%, #14b8a6 50%, #0f766e 100%);
+  border-radius: 2pt 2pt 0 0;
+  margin-bottom: 10pt;
+}
+
+.hc-print-top-bar-bill {
+  background: linear-gradient(90deg, #334155 0%, #64748b 100%);
+}
+
+.hc-print-header {
+  text-align: center;
+  padding-bottom: 10pt;
+  margin-bottom: 10pt;
+  border-bottom: 1pt solid #cbd5e1;
+}
+
+.hc-print-header-bill {
+  border-bottom-color: #94a3b8;
+}
+
+.hc-print-logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10pt;
+  margin-bottom: 6pt;
+}
+
+.hc-print-logo-badge {
+  width: 32pt;
+  height: 32pt;
+  border-radius: 8pt;
+  background: #0f766e;
+  color: #fff;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 16pt;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hc-print-header-text {
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.hc-print-hospital {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 15pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f766e;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hc-print-tagline {
+  margin: 2pt 0 0;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 500;
+  color: #64748b;
+  font-style: italic;
+}
+
+.hc-print-rx-symbol {
+  font-family: Georgia, serif;
+  font-size: 28pt;
+  font-weight: 700;
+  font-style: italic;
+  color: #0f766e;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.hc-print-meta {
+  margin: 6pt 0 0;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 8.5pt;
+  color: #64748b;
+}
+
+.hc-print-doctor-box {
+  margin-top: 8pt;
+  padding: 6pt 10pt;
+  background: #f0fdfa;
+  border: 1pt solid #99f6e4;
+  border-radius: 6pt;
+  display: flex;
+  flex-direction: column;
+  gap: 2pt;
+}
+
+.hc-print-doctor-label {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #0f766e;
+}
+
+.hc-print-doctor-name {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 11pt;
+  font-weight: 700;
+  color: #134e4a;
+}
+
+.hc-print-doctor-qual {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 9pt;
+  color: #475569;
+}
+
+.hc-print-patient-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10pt 16pt;
+  padding: 10pt 12pt;
+  margin-bottom: 10pt;
+  background: #f8fafc;
+  border: 1pt solid #e2e8f0;
+  border-radius: 6pt;
+}
+
+.hc-print-patient-card-compact {
+  grid-template-columns: 1fr;
+  font-size: 10pt;
+}
+
+.hc-print-patient-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6pt;
+}
+
+.hc-print-field {
+  display: flex;
+  flex-direction: column;
+  gap: 1pt;
+}
+
+.hc-print-field-label {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.hc-print-field-value {
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.hc-print-date {
+  font-size: 9.5pt;
+  font-weight: 500;
+}
+
+.hc-print-align-right {
+  text-align: right;
+}
+
+.hc-print-align-right .hc-print-field {
+  align-items: flex-end;
+}
+
+.hc-print-vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6pt;
+  margin-bottom: 10pt;
+}
+
+.hc-print-vital-chip {
+  border: 1pt solid #e2e8f0;
+  border-radius: 4pt;
+  padding: 5pt 6pt;
+  background: #fff;
+  text-align: center;
+}
+
+.hc-print-vital-label {
+  display: block;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 7pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.hc-print-vital-value {
+  display: block;
+  font-size: 10pt;
+  font-weight: 700;
+  color: #0f766e;
+  margin-top: 2pt;
+}
+
+.hc-print-diagnosis {
+  margin-bottom: 10pt;
+  padding: 8pt 10pt;
+  border-left: 3pt solid #0f766e;
+  background: #f8fafc;
+}
+
+.hc-print-diagnosis-label {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+
+.hc-print-diagnosis p {
+  margin: 4pt 0 0;
+  font-size: 10.5pt;
+}
+
+.hc-print-block {
+  margin-top: 10pt;
+}
+
+.hc-print-section-title {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 9.5pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0f766e;
+  margin: 0 0 8pt;
+  padding-bottom: 4pt;
+  border-bottom: 1pt solid #ccfbf1;
+}
+
+.hc-print-section-icon {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 12pt;
+  margin-right: 4pt;
+}
+
+.hc-print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.hc-print-table thead {
+  background: #0f766e;
+  color: #fff;
+}
+
+.hc-print-table th {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6pt 8pt;
+  text-align: left;
+}
+
+.hc-print-table td {
+  padding: 6pt 8pt;
+  border-bottom: 1pt solid #e2e8f0;
+  vertical-align: top;
+}
+
+.hc-print-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.hc-print-th-num,
+.hc-print-td-num {
+  width: 24pt;
+  text-align: center;
+}
+
+.hc-print-bold {
+  font-weight: 700;
+}
+
+.hc-print-lab-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hc-print-lab-list li {
+  padding: 4pt 0;
+  border-bottom: 1pt dotted #e2e8f0;
+  font-size: 10pt;
+}
+
+.hc-print-lab-num {
+  font-weight: 700;
+  color: #0f766e;
+  margin-right: 4pt;
+}
+
+.hc-print-advice {
+  margin-top: 10pt;
+  padding: 8pt;
+  border: 1pt dashed #cbd5e1;
+  border-radius: 4pt;
+  font-size: 10pt;
+}
+
+.hc-print-advice-label {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.hc-print-advice p {
+  margin: 4pt 0 0;
+}
+
+.hc-print-footer {
+  margin-top: auto;
+  padding-top: 10pt;
+  border-top: 1pt solid #cbd5e1;
+  flex-shrink: 0;
+}
+
+.hc-print-signature {
+  width: 55%;
+}
+
+.hc-print-signature-line {
+  height: 28pt;
+  border-bottom: 1.5pt solid #334155;
+  margin-bottom: 4pt;
+}
+
+.hc-print-signature p {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 8.5pt;
+  color: #64748b;
+}
+
+.hc-print-footer-note {
+  margin: 8pt 0 0;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 7.5pt;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.hc-print-bill-label {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #475569;
+  margin: 4pt 0 0;
+}
+
+.hc-print-bill-table thead {
+  background: #334155;
+}
+
+.hc-print-subtotal-row td {
+  font-weight: 600;
+  border-top: 1pt solid #94a3b8;
+}
+
+.hc-print-total-row td {
+  font-family: Inter, Arial, sans-serif;
+  font-size: 11pt;
+  font-weight: 800;
+  border-top: 2pt solid #0f172a;
+  background: #f1f5f9 !important;
+}
+
+.hc-print-paid-badge {
+  margin: 14pt auto 0;
+  width: fit-content;
+  padding: 6pt 20pt;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 12pt;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  border-radius: 4pt;
+  text-align: center;
+}
+
+.hc-print-paid-badge.is-paid {
+  background: #dcfce7;
+  color: #166534;
+  border: 2pt solid #22c55e;
+}
+
+.hc-print-paid-badge.is-unpaid {
+  background: #fef3c7;
+  color: #92400e;
+  border: 2pt solid #f59e0b;
+}
+
+.hc-print-bill-footer {
+  margin-top: auto;
+  padding-top: 8pt;
+  text-align: center;
+  font-size: 9pt;
+  color: #64748b;
+  font-style: italic;
+  flex-shrink: 0;
+}
+
+/* Tighter layout when many prescription lines */
+.hc-print-document--compact,
+.hc-print-page--compact {
+  font-size: 9pt;
+  line-height: 1.3;
+}
+
+.hc-print-document--compact .hc-print-header {
+  padding-bottom: 6pt;
+  margin-bottom: 6pt;
+}
+
+.hc-print-document--compact .hc-print-patient-card,
+.hc-print-document--compact .hc-print-vitals-grid,
+.hc-print-document--compact .hc-print-diagnosis,
+.hc-print-document--compact .hc-print-block {
+  margin-bottom: 6pt;
+}
+
+.hc-print-document--compact .hc-print-table th,
+.hc-print-document--compact .hc-print-table td {
+  padding: 3pt 5pt;
+}
+
+.hc-print-document--compact .hc-print-table {
+  font-size: 8.5pt;
+}
+
+.hc-print-document--compact .hc-print-signature-line {
+  height: 18pt;
+}
+
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 6mm;
+  }
+
+  html,
+  body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  #root {
+    display: none !important;
+  }
+
+  #health-care-print-root {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .hc-print-document {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  /* One A5 sheet per section: prescription page 1, bill page 2 */
+  .hc-print-page {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 100%;
+    height: 198mm;
+    max-height: 198mm;
+    min-height: 198mm;
+    overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  .hc-print-page--with-next,
+  .hc-print-page--rx:not(:last-child) {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .hc-print-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .hc-print-page-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .hc-print-header {
+    flex-shrink: 0;
+    padding-bottom: 6pt;
+    margin-bottom: 6pt;
+  }
+
+  .hc-print-top-bar {
+    flex-shrink: 0;
+    height: 4pt;
+    margin-bottom: 6pt;
+  }
+
+  .hc-print-patient-card {
+    padding: 6pt 8pt;
+    margin-bottom: 6pt;
+  }
+
+  .hc-print-vitals-grid {
+    margin-bottom: 6pt;
+    gap: 4pt;
+  }
+
+  .hc-print-vital-chip {
+    padding: 3pt 4pt;
+  }
+
+  .hc-print-diagnosis {
+    margin-bottom: 6pt;
+    padding: 5pt 8pt;
+  }
+
+  .hc-print-block {
+    margin-top: 6pt;
+  }
+
+  .hc-print-section-title {
+    margin-bottom: 4pt;
+    padding-bottom: 2pt;
+    font-size: 8.5pt;
+  }
+
+  .hc-print-table {
+    font-size: 8.5pt;
+  }
+
+  .hc-print-table th,
+  .hc-print-table td {
+    padding: 3pt 5pt;
+  }
+
+  .hc-print-lab-list li {
+    padding: 2pt 0;
+  }
+
+  .hc-print-advice {
+    margin-top: 6pt;
+    padding: 5pt;
+  }
+
+  .hc-print-footer {
+    margin-top: auto;
+    padding-top: 6pt;
+  }
+
+  .hc-print-signature-line {
+    height: 20pt;
+  }
+
+  .hc-print-footer-note {
+    margin-top: 4pt;
+  }
+
+  .hc-print-hospital {
+    font-size: 12pt;
+  }
+
+  .hc-print-logo-badge {
+    width: 26pt;
+    height: 26pt;
+    font-size: 12pt;
+  }
+
+  .hc-print-rx-symbol {
+    font-size: 22pt;
+  }
+
+  .hc-print-doctor-box {
+    margin-top: 4pt;
+    padding: 4pt 8pt;
+  }
+
+  .hc-print-paid-badge {
+    margin-top: 8pt;
+    padding: 4pt 16pt;
+    font-size: 10pt;
+  }
+
+  .hc-print-bill-footer {
+    margin-top: auto;
+    padding-top: 6pt;
+  }
+
+  .hc-print-page--bill .hc-print-header-bill {
+    padding-bottom: 4pt;
+    margin-bottom: 4pt;
+  }
+
+  .hc-print-top-bar,
+  .hc-print-logo-badge,
+  .hc-print-table thead,
+  .hc-print-doctor-box,
+  .hc-print-vital-chip,
+  .hc-print-diagnosis,
+  .hc-print-paid-badge.is-paid,
+  .hc-print-paid-badge.is-unpaid,
+  .hc-print-table tbody tr:nth-child(even),
+  .hc-print-total-row td {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

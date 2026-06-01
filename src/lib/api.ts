@@ -90,6 +90,7 @@ export const api = {
       patients: number;
       doctors: number;
       appointmentsToday: number;
+      visitsToday: number;
       drugs: number;
       lowStock: number;
       hospitalName: string;
@@ -191,6 +192,40 @@ export const api = {
         body: JSON.stringify({ stockQuantity }),
       }),
     delete: (id: string) => request(`/drugs/${id}`, { method: 'DELETE' }),
+  },
+  labTests: {
+    list: (search?: string) =>
+      request<LabTest[]>(
+        `/lab-tests${search ? `?search=${encodeURIComponent(search)}` : ''}`
+      ),
+  },
+  visits: {
+    list: (params?: {
+      patientId?: string;
+      search?: string;
+      date?: string;
+      from?: string;
+      to?: string;
+      limit?: number;
+    }) => {
+      const q = new URLSearchParams();
+      if (params?.patientId) q.set('patientId', params.patientId);
+      if (params?.search) q.set('search', params.search);
+      if (params?.date) q.set('date', params.date);
+      if (params?.from) q.set('from', params.from);
+      if (params?.to) q.set('to', params.to);
+      if (params?.limit) q.set('limit', String(params.limit));
+      const qs = q.toString();
+      return request<VisitSummary[]>(`/visits${qs ? `?${qs}` : ''}`);
+    },
+    get: (id: string) => request<VisitDetail>(`/visits/${id}`),
+    patientHistory: (patientId: string) =>
+      request<VisitHistoryItem[]>(`/visits/patient/${patientId}/history`),
+    create: (data: NewVisit) =>
+      request<VisitDetail>('/visits', { method: 'POST', body: JSON.stringify(data) }),
+    markPaid: (id: string) =>
+      request<{ ok: boolean }>(`/visits/${id}/bill/paid`, { method: 'PATCH' }),
+    delete: (id: string) => request<{ ok: boolean }>(`/visits/${id}`, { method: 'DELETE' }),
   },
 };
 
@@ -335,4 +370,113 @@ export type NewDrug = {
   stockQuantity?: number;
   reorderLevel?: number;
   salePrice?: number;
+};
+
+export type LabTest = {
+  id: string;
+  name: string;
+  code: string;
+  category: string | null;
+  price: number;
+};
+
+export type PrescriptionLineInput = {
+  lineType: 'drug' | 'lab' | 'custom';
+  drugId?: string | null;
+  labTestId?: string | null;
+  name: string;
+  dosage?: string | null;
+  quantity: number;
+  unitPrice: number;
+};
+
+export type NewVisit = {
+  patientId?: string;
+  newPatient?: {
+    name: string;
+    contact: string;
+    gender?: 'Male' | 'Female' | 'Other';
+    age?: number;
+    fatherName?: string;
+  };
+  doctorId?: string | null;
+  weightKg?: number | null;
+  bloodPressure?: string | null;
+  temperature?: number | null;
+  bloodSugar?: number | null;
+  pulse?: number | null;
+  spo2?: number | null;
+  diagnosis?: string | null;
+  advice?: string | null;
+  consultationFee?: number;
+  discount?: number;
+  isPaid?: boolean;
+  lines: PrescriptionLineInput[];
+};
+
+export type VisitSummary = {
+  id: string;
+  visitNumber: string;
+  visitDate: string;
+  diagnosis: string | null;
+  consultationFee: number;
+  weightKg?: number | null;
+  bloodPressure?: string | null;
+  patient: {
+    id: string;
+    name: string;
+    patientId: string;
+    contact: string | null;
+    gender: string | null;
+  };
+  doctor: { id: string; name: string; specialization: string | null } | null;
+  bill: { total: number; isPaid: boolean; billNumber: string } | null;
+};
+
+export type VisitDetail = VisitSummary & {
+  weightKg: number | null;
+  bloodPressure: string | null;
+  temperature: number | null;
+  bloodSugar: number | null;
+  pulse: number | null;
+  spo2: number | null;
+  advice: string | null;
+  lines: {
+    id: string;
+    lineType: string;
+    name: string;
+    dosage: string | null;
+    quantity: number;
+    unitPrice: number;
+    amount: number;
+  }[];
+  bill: {
+    id: string;
+    billNumber: string;
+    subtotal: number;
+    discount: number;
+    total: number;
+    isPaid: boolean;
+  } | null;
+  doctor: {
+    id: string;
+    name: string;
+    qualification: string | null;
+    specialization: string | null;
+    fee: number;
+    department?: { name: string } | null;
+  } | null;
+  patient: Patient;
+};
+
+export type VisitHistoryItem = {
+  id: string;
+  visitNumber: string;
+  visitDate: string;
+  diagnosis: string | null;
+  consultationFee: number;
+  doctor: { name: string } | null;
+  lineCount: number;
+  lines: { id: string; name: string; lineType: string; dosage: string | null }[];
+  bill: { total: number; billNumber: string; isPaid: boolean } | null;
 };

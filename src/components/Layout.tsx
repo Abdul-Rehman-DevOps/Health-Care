@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import {
   Building2,
   Calendar,
+  ClipboardList,
+  History,
   LayoutDashboard,
   LogOut,
   Pill,
@@ -22,6 +24,8 @@ export type { PageId };
 
 const PAGE_TITLES: Record<PageId, string> = {
   dashboard: 'Dashboard',
+  opd: 'OPD & Prescription',
+  visits: 'Previous visits',
   patients: 'Patients',
   doctors: 'Doctors',
   appointments: 'Appointments',
@@ -33,6 +37,8 @@ const PAGE_TITLES: Record<PageId, string> = {
 
 const nav: { id: PageId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'opd', label: 'OPD & Prescription', icon: ClipboardList },
+  { id: 'visits', label: 'Previous visits', icon: History },
   { id: 'patients', label: 'Patient details', icon: Users },
   { id: 'doctors', label: 'Doctors', icon: Stethoscope },
   { id: 'appointments', label: 'Appointments', icon: Calendar },
